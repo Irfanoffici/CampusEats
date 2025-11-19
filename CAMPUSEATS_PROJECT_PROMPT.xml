@@ -1,0 +1,760 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project_prompt>
+  <metadata>
+    <project_name>CampusEats</project_name>
+    <institution>Madras Engineering College (MEC)</institution>
+    <project_type>Full-Stack Food Ordering Web Application</project_type>
+    <style_reference>Swiggy-inspired UI/UX</style_reference>
+    <target_platforms>Bolt.new, Lovable.dev, v0.dev, Cursor AI</target_platforms>
+  </metadata>
+
+  <core_requirements>
+    <requirement priority="high">
+      <title>Three Separate Authentication Portals</title>
+      <description>
+        Create distinct login interfaces and dashboards for:
+        1. Students - Browse menu, place orders, track orders, view order history
+        2. Vendors - Manage menu items, view incoming orders, update order status
+        3. Admin - Manage vendors, students, view analytics, system configuration
+      </description>
+    </requirement>
+
+    <requirement priority="high">
+      <title>RFID Integration System</title>
+      <description>
+        - Integrate with college RFID database for student authentication
+        - Each student's RFID card contains a points balance
+        - Automatic points deduction upon successful food pickup
+        - Real-time balance display for students
+        - QR code scanning at pickup counter to confirm collection
+        - Points transaction history tracking
+      </description>
+    </requirement>
+
+    <requirement priority="high">
+      <title>Multiple Payment Options</title>
+      <description>
+        1. RFID Points - Primary payment method using campus card balance
+        2. Demo Payment Gateway - Simulated card payment processing
+        3. UPI Integration - UPI payment option with QR code generation
+        4. QR Code Payment - Generate dynamic QR for each order
+      </description>
+    </requirement>
+
+    <requirement priority="high">
+      <title>Shared/Group Order Feature</title>
+      <description>
+        - Students can create group orders with unique shareable links
+        - Multiple students can add items to same order
+        - Split payment options (equal split or custom amounts)
+        - Group order coordinator can finalize and place order
+        - Each participant receives individual invoice
+        - Real-time updates when group members add items
+      </description>
+    </requirement>
+
+    <requirement priority="high">
+      <title>Invoice Generation System</title>
+      <description>
+        - Automatic PDF invoice generation after order placement
+        - Include: Order ID, timestamp, itemized list, prices, taxes, total
+        - QR code on invoice for order tracking and pickup
+        - Email delivery option
+        - Download and print functionality
+        - Invoice history archive for students
+      </description>
+    </requirement>
+
+    <requirement priority="medium">
+      <title>Feedback and Rating System</title>
+      <description>
+        - Star rating (1-5) for each order
+        - Written review submission
+        - Rate food quality, delivery time, and vendor service separately
+        - Photo upload option for reviews
+        - Vendor responses to reviews
+        - Display average ratings on vendor/item pages
+        - Moderate reviews in admin panel
+      </description>
+    </requirement>
+  </core_requirements>
+
+  <technical_specifications>
+    <frontend>
+      <framework>React 18+ with Vite or Next.js 14+</framework>
+      <styling>TailwindCSS with custom Swiggy-inspired color scheme</styling>
+      <animations>
+        - Framer Motion for page transitions
+        - Smooth scroll animations
+        - Loading skeleton screens
+        - Micro-interactions on buttons and cards
+        - Cart bounce animations
+        - Success/error toast notifications with animations
+      </animations>
+      <ui_components>
+        - shadcn/ui or Radix UI for accessible components
+        - Custom food card components with hover effects
+        - Animated shopping cart with item count badge
+        - Interactive order tracking timeline
+        - Responsive design for mobile, tablet, desktop
+      </ui_components>
+      <sound_effects>
+        - Add to cart: Soft click sound
+        - Order placed: Success chime
+        - Order ready notification: Pleasant bell sound
+        - Error/validation: Subtle warning tone
+        - Button clicks: Minimal tap sounds
+        - Use Web Audio API or Howler.js library
+      </sound_effects>
+    </frontend>
+
+    <backend>
+      <stack_option_1>
+        <runtime>Node.js with Express.js</runtime>
+        <database>PostgreSQL or MongoDB</database>
+        <orm>Prisma (PostgreSQL) or Mongoose (MongoDB)</orm>
+      </stack_option_1>
+      <stack_option_2>
+        <runtime>Node.js with Next.js API Routes</runtime>
+        <database>Supabase (PostgreSQL with real-time)</database>
+      </stack_option_2>
+      <authentication>
+        <library>NextAuth.js or Clerk</library>
+        <features>
+          - JWT-based session management
+          - Role-based access control (Student, Vendor, Admin)
+          - RFID card number integration
+          - Password hashing with bcrypt
+          - Session persistence
+        </features>
+      </authentication>
+      <api_endpoints>
+        <auth>
+          POST /api/auth/login
+          POST /api/auth/register
+          POST /api/auth/logout
+          GET /api/auth/verify-rfid
+        </auth>
+        <students>
+          GET /api/students/profile
+          GET /api/students/orders
+          GET /api/students/balance
+          POST /api/students/create-group-order
+          POST /api/students/join-group-order
+        </students>
+        <vendors>
+          GET /api/vendors/menu
+          POST /api/vendors/menu/item
+          PUT /api/vendors/menu/item/:id
+          DELETE /api/vendors/menu/item/:id
+          GET /api/vendors/orders
+          PATCH /api/vendors/orders/:id/status
+        </vendors>
+        <orders>
+          POST /api/orders/create
+          GET /api/orders/:id
+          GET /api/orders/:id/track
+          PATCH /api/orders/:id/confirm-pickup
+          POST /api/orders/:id/review
+        </orders>
+        <payments>
+          POST /api/payments/rfid-deduct
+          POST /api/payments/upi-generate
+          POST /api/payments/gateway-process
+          GET /api/payments/transaction-history
+        </payments>
+        <admin>
+          GET /api/admin/analytics
+          GET /api/admin/vendors
+          GET /api/admin/students
+          POST /api/admin/rfid-credit
+        </admin>
+      </api_endpoints>
+      <real_time>
+        - Use Socket.io or Supabase Realtime
+        - Live order status updates
+        - Group order real-time collaboration
+        - Vendor order notifications
+        - Admin dashboard live metrics
+      </real_time>
+    </backend>
+
+    <database_schema>
+      <users_table>
+        - id (UUID, primary key)
+        - email (unique)
+        - password_hash
+        - role (enum: student, vendor, admin)
+        - rfid_number (unique, for students)
+        - rfid_balance (decimal, for students)
+        - full_name
+        - phone_number
+        - created_at, updated_at
+      </users_table>
+      <vendors_table>
+        - id (UUID, primary key)
+        - user_id (foreign key)
+        - shop_name
+        - description
+        - image_url
+        - average_rating
+        - total_reviews
+        - is_active
+        - opening_hours (JSON)
+      </vendors_table>
+      <menu_items_table>
+        - id (UUID, primary key)
+        - vendor_id (foreign key)
+        - name
+        - description
+        - price
+        - image_url
+        - category (enum: breakfast, lunch, snacks, beverages, etc.)
+        - is_available
+        - preparation_time (minutes)
+      </menu_items_table>
+      <orders_table>
+        - id (UUID, primary key)
+        - order_number (unique, auto-generated)
+        - student_id (foreign key)
+        - vendor_id (foreign key)
+        - is_group_order (boolean)
+        - group_order_id (nullable, foreign key)
+        - items (JSON array)
+        - subtotal
+        - tax
+        - total_amount
+        - payment_method (enum: rfid, upi, card)
+        - payment_status (enum: pending, completed, failed)
+        - order_status (enum: placed, confirmed, preparing, ready, picked_up, cancelled)
+        - pickup_code (6-digit unique code)
+        - created_at, updated_at, picked_up_at
+      </orders_table>
+      <group_orders_table>
+        - id (UUID, primary key)
+        - creator_id (foreign key to users)
+        - share_link (unique token)
+        - vendor_id (foreign key)
+        - is_finalized (boolean)
+        - participant_count
+        - split_type (enum: equal, custom)
+        - created_at, expires_at
+      </group_orders_table>
+      <reviews_table>
+        - id (UUID, primary key)
+        - order_id (foreign key)
+        - student_id (foreign key)
+        - vendor_id (foreign key)
+        - food_rating (1-5)
+        - service_rating (1-5)
+        - comment (text)
+        - images (JSON array of URLs)
+        - vendor_response (text, nullable)
+        - created_at
+      </reviews_table>
+      <transactions_table>
+        - id (UUID, primary key)
+        - student_id (foreign key)
+        - order_id (foreign key, nullable)
+        - transaction_type (enum: debit, credit, refund)
+        - amount
+        - previous_balance
+        - new_balance
+        - description
+        - created_at
+      </transactions_table>
+    </database_schema>
+
+    <rfid_integration>
+      <simulation_mode>
+        For demo purposes, simulate RFID system:
+        - Generate mock RFID numbers for test students
+        - Create admin interface to credit RFID balance
+        - Simulate card tap with button click or input field
+        - Validate RFID number against database
+        - Real-time balance updates
+      </simulation_mode>
+      <future_integration>
+        - API endpoint ready for actual RFID reader integration
+        - Webhook support for external RFID system
+        - QR code scanning at pickup counter using device camera
+      </future_integration>
+    </rfid_integration>
+
+    <payment_gateway>
+      <demo_implementation>
+        - Create realistic payment form with card details
+        - Client-side validation
+        - Simulated processing with loading animation
+        - Random success/failure for testing (90% success rate)
+        - Generate transaction ID
+        - Payment confirmation screen
+      </demo_implementation>
+      <upi_qr_generation>
+        - Generate UPI payment string: upi://pay?pa=campuseats@ybl&pn=CampusEats&am=AMOUNT&cu=INR
+        - Display QR code using qrcode.react or qrcode library
+        - Show UPI ID for manual entry
+        - Timer for payment completion (5 minutes)
+        - Manual payment confirmation button (for demo)
+      </upi_qr_generation>
+    </payment_gateway>
+
+    <invoice_system>
+      <library>jsPDF or react-pdf for PDF generation</library>
+      <template_design>
+        - CampusEats header with logo
+        - Invoice number and date
+        - Student details (name, RFID number)
+        - Vendor details
+        - Itemized table with quantities and prices
+        - Subtotal, tax breakdown, total
+        - Payment method used
+        - QR code for order pickup (encodes order_id and pickup_code)
+        - Footer with thank you message
+      </template_design>
+      <delivery>
+        - Auto-download after order placement
+        - View in browser option
+        - Email sending (optional, for demo use console.log)
+        - Store in order history for re-download
+      </delivery>
+    </invoice_system>
+  </technical_specifications>
+
+  <ui_ux_design>
+    <color_scheme>
+      <primary>#FC8019 (Swiggy Orange)</primary>
+      <secondary>#60B246 (Green for success states)</secondary>
+      <background>#FFFFFF</background>
+      <text_primary>#282C3F</text_primary>
+      <text_secondary>#7E808C</text_secondary>
+      <accent>#FFD700 (Gold for ratings)</accent>
+    </color_scheme>
+
+    <key_pages>
+      <landing_page>
+        - Hero section with search bar
+        - Featured vendors carousel
+        - Category quick links (Breakfast, Lunch, Snacks, Beverages)
+        - Promotional banners
+        - How it works section
+        - Login/Register CTAs
+      </landing_page>
+
+      <student_dashboard>
+        - Active order tracking card (if any)
+        - RFID balance display prominently
+        - Browse vendors grid/list view
+        - Search and filter functionality
+        - Quick reorder from history
+        - Group order invitations
+      </student_dashboard>
+
+      <vendor_dashboard>
+        - Incoming orders queue with sound notifications
+        - Order management with status update buttons
+        - Menu management interface
+        - Sales analytics charts
+        - Review management
+      </vendor_dashboard>
+
+      <admin_dashboard>
+        - Real-time metrics (total orders, revenue, active users)
+        - Vendor approval and management
+        - Student RFID management (credit balance)
+        - System-wide analytics
+        - Review moderation
+      </admin_dashboard>
+
+      <menu_page>
+        - Vendor header with image, rating, reviews
+        - Category tabs or filters
+        - Food item cards with images, prices, ratings
+        - Add to cart with quantity selector
+        - Customization options (if applicable)
+        - Floating cart button with total
+      </menu_page>
+
+      <cart_checkout>
+        - Cart items with edit/remove options
+        - Subtotal calculation with tax
+        - Payment method selection
+        - Group order option toggle
+        - Special instructions field
+        - Place order button
+      </cart_checkout>
+
+      <order_tracking>
+        - Visual timeline of order status
+        - Estimated preparation time
+        - Pickup code display (large, bold)
+        - Vendor contact info
+        - Cancel order option (if not started)
+        - Live updates via websockets
+      </order_tracking>
+
+      <group_order_page>
+        - Share link generation and copy button
+        - List of participants with their items
+        - Real-time updates as others add items
+        - Running total calculation
+        - Finalize and checkout button (creator only)
+        - Payment split visualization
+      </group_order_page>
+    </key_pages>
+
+    <animations_list>
+      - Page transitions with fade and slide effects
+      - Card hover lift effect (scale and shadow)
+      - Button ripple effect on click
+      - Cart icon shake when item added
+      - Skeleton loaders for async content
+      - Progress bars for order status
+      - Success confetti animation on order placement
+      - Toast notifications slide-in from top-right
+      - Image lazy loading with blur-up effect
+      - Smooth accordion for FAQ sections
+    </animations_list>
+
+    <responsive_design>
+      - Mobile-first approach
+      - Breakpoints: 640px (sm), 768px (md), 1024px (lg), 1280px (xl)
+      - Bottom navigation bar for mobile
+      - Hamburger menu for mobile navigation
+      - Touch-friendly button sizes (min 44x44px)
+      - Swipeable carousels on mobile
+    </responsive_design>
+  </ui_ux_design>
+
+  <feature_implementations>
+    <feature name="Shared/Group Order">
+      <workflow>
+        1. Student creates group order, selects vendor
+        2. System generates unique shareable link
+        3. Creator shares link with friends
+        4. Friends click link, authenticate, add their items
+        5. Real-time updates show all participants' items
+        6. Creator finalizes order when everyone is done
+        7. Choose split type: equal or custom amounts
+        8. Each participant completes their payment portion
+        9. Order placed when all payments confirmed
+        10. Individual invoices generated for each participant
+      </workflow>
+      <technical_notes>
+        - Use WebSocket for real-time collaboration
+        - Store group order state in database
+        - Implement locking mechanism when finalizing
+        - Handle payment failures gracefully
+        - Set expiration time for group order links (30 minutes)
+      </technical_notes>
+    </feature>
+
+    <feature name="RFID Pickup Confirmation">
+      <workflow>
+        1. Student places order, receives pickup code
+        2. Order shows in vendor's queue
+        3. Vendor prepares order, marks as "Ready"
+        4. Student arrives at counter, shows pickup code
+        5. Vendor enters code or scans QR from invoice
+        6. System verifies code matches order
+        7. RFID points deducted from student's balance
+        8. Order marked as "Picked Up"
+        9. Transaction recorded in history
+        10. Student prompted to rate order
+      </workflow>
+      <technical_notes>
+        - Generate unique 6-digit pickup codes
+        - QR code encodes: {orderId, pickupCode, rfidNumber}
+        - Atomic transaction for point deduction
+        - Prevent double-deduction with status checks
+        - Admin override for failed transactions
+      </technical_notes>
+    </feature>
+
+    <feature name="Sound Effects">
+      <implementation>
+        - Create /public/sounds/ directory
+        - Add small audio files (click.mp3, success.mp3, etc.)
+        - Implement useSound hook or use Howler.js
+        - Add mute/unmute toggle in settings
+        - Respect user's system sound preferences
+        - Preload sounds for smooth playback
+      </implementation>
+      <sound_files>
+        - add-to-cart.mp3 (50-100ms, soft click)
+        - order-placed.mp3 (1-2s, success chime)
+        - notification.mp3 (short bell for vendors)
+        - error.mp3 (subtle warning tone)
+        - button-click.mp3 (minimal tap)
+      </sound_files>
+    </feature>
+
+    <feature name="Reviews and Ratings">
+      <implementation>
+        - Show rating prompt after order picked up
+        - Modal with star rating component
+        - Separate ratings for food, service, delivery time
+        - Optional text review and photo upload
+        - Submit button triggers API call
+        - Display aggregated ratings on vendor cards
+        - Show recent reviews on vendor page
+        - Admin moderation queue for inappropriate reviews
+        - Vendors can respond to reviews
+      </implementation>
+    </feature>
+  </feature_implementations>
+
+  <sample_data>
+    <students>
+      - John Doe (RFID: 1234567890, Balance: 500 points)
+      - Jane Smith (RFID: 0987654321, Balance: 750 points)
+      - Alex Kumar (RFID: 1122334455, Balance: 300 points)
+    </students>
+    <vendors>
+      - Campus Canteen (North Indian, South Indian, Beverages)
+      - Quick Bites (Snacks, Sandwiches, Burgers)
+      - Juice Junction (Fresh Juices, Smoothies, Shakes)
+      - Dosa Point (South Indian Breakfast)
+    </vendors>
+    <menu_items>
+      Campus Canteen:
+        - Masala Dosa (₹40, 15 min prep)
+        - Idli Sambar (₹30, 10 min prep)
+        - Veg Biryani (₹80, 20 min prep)
+        - Tea (₹10, 2 min prep)
+      Quick Bites:
+        - Veg Burger (₹50, 8 min prep)
+        - Cheese Sandwich (₹40, 5 min prep)
+        - French Fries (₹35, 7 min prep)
+    </menu_items>
+  </sample_data>
+
+  <development_instructions>
+    <initialization>
+      For Bolt.new / Lovable / v0:
+      "Create a full-stack food ordering web application called CampusEats for Madras Engineering College with the following stack:
+      - Frontend: React 18 with Vite, TailwindCSS, Framer Motion
+      - Backend: Next.js 14 API routes
+      - Database: Supabase (PostgreSQL)
+      - Authentication: NextAuth.js with role-based access
+      - UI Components: shadcn/ui
+      - Animations: Framer Motion
+      - Sound: Howler.js
+      - PDF: jsPDF for invoice generation
+      - QR Codes: qrcode.react
+      - Real-time: Supabase Realtime subscriptions"
+    </initialization>
+
+    <step_by_step>
+      <step number="1">
+        Set up project structure with all dependencies installed
+      </step>
+      <step number="2">
+        Configure database schema in Supabase with all tables
+      </step>
+      <step number="3">
+        Implement authentication system with three role-based portals
+      </step>
+      <step number="4">
+        Build student portal with vendor browsing and menu viewing
+      </step>
+      <step number="5">
+        Implement shopping cart and checkout flow
+      </step>
+      <step number="6">
+        Add RFID balance system and payment integration
+      </step>
+      <step number="7">
+        Build group order feature with real-time collaboration
+      </step>
+      <step number="8">
+        Create invoice generation system with PDF and QR codes
+      </step>
+      <step number="9">
+        Implement vendor dashboard with order management
+      </step>
+      <step number="10">
+        Build admin dashboard with analytics and management tools
+      </step>
+      <step number="11">
+        Add review and rating system
+      </step>
+      <step number="12">
+        Integrate sound effects across the application
+      </step>
+      <step number="13">
+        Add animations and polish UI/UX
+      </step>
+      <step number="14">
+        Test all features and create demo data
+      </step>
+      <step number="15">
+        Deploy and provide access credentials
+      </step>
+    </step_by_step>
+
+    <important_notes>
+      - Prioritize smooth animations and transitions
+      - Ensure mobile responsiveness throughout
+      - Add loading states for all async operations
+      - Implement proper error handling with user-friendly messages
+      - Use optimistic UI updates for better perceived performance
+      - Add accessibility features (ARIA labels, keyboard navigation)
+      - Implement rate limiting on API endpoints
+      - Add input validation on both client and server
+      - Use environment variables for sensitive configuration
+      - Include comprehensive console logging for debugging
+    </important_notes>
+  </development_instructions>
+
+  <testing_scenarios>
+    <scenario name="Student Order Flow">
+      1. Login as student
+      2. Browse vendors and select one
+      3. Add multiple items to cart
+      4. Proceed to checkout
+      5. Select RFID payment
+      6. Place order
+      7. Verify invoice download
+      8. Track order status
+      9. Simulate pickup with code
+      10. Submit review
+    </scenario>
+
+    <scenario name="Group Order Flow">
+      1. Student A creates group order
+      2. Student A shares link with Student B
+      3. Student B joins and adds items
+      4. Both see real-time updates
+      5. Student A finalizes order
+      6. Split payment (equal or custom)
+      7. Both complete payment
+      8. Order placed, both receive invoices
+    </scenario>
+
+    <scenario name="Vendor Management">
+      1. Login as vendor
+      2. View incoming orders
+      3. Update order status (Confirmed → Preparing → Ready)
+      4. Add new menu item with image
+      5. Edit existing item price
+      6. Mark item as unavailable
+      7. View and respond to reviews
+    </scenario>
+
+    <scenario name="Admin Operations">
+      1. Login as admin
+      2. View dashboard analytics
+      3. Add RFID balance to student account
+      4. Approve new vendor registration
+      5. View all transactions
+      6. Moderate review content
+    </scenario>
+  </testing_scenarios>
+
+  <deliverables>
+    <code>
+      - Fully functional React/Next.js application
+      - All API endpoints implemented and working
+      - Database schema created with sample data
+      - Environment configuration files
+    </code>
+    <documentation>
+      - README with setup instructions
+      - API endpoint documentation
+      - Test credentials for all three roles
+      - Demo walkthrough guide
+    </documentation>
+    <features>
+      ✓ Three role-based portals (Student, Vendor, Admin)
+      ✓ RFID integration with balance management
+      ✓ Multiple payment methods (RFID, UPI, Card)
+      ✓ Shared/Group order functionality
+      ✓ Invoice generation with PDF and QR codes
+      ✓ Review and rating system
+      ✓ Real-time order tracking
+      ✓ Smooth animations with Framer Motion
+      ✓ Sound effects integration
+      ✓ Responsive design
+      ✓ Swiggy-inspired UI/UX
+    </features>
+  </deliverables>
+
+  <example_prompt_for_ai_tools>
+    <full_prompt>
+Build CampusEats - a complete food ordering web app for Madras Engineering College with Swiggy-inspired design.
+
+TECH STACK:
+- React 18 + Vite, TailwindCSS, shadcn/ui, Framer Motion
+- Next.js 14 API routes, Supabase, NextAuth.js
+- jsPDF, qrcode.react, Howler.js
+
+CORE FEATURES:
+1. Three Login Portals: Student, Vendor, Admin (role-based access)
+2. RFID Integration: Student cards with point balance, auto-deduct on pickup
+3. Payments: RFID points, demo payment gateway, UPI with QR codes
+4. Group Orders: Share link, real-time collaboration, split payments, individual invoices
+5. Invoice System: Auto-generate PDF with QR code, itemized details, download/email
+6. Reviews: Star ratings (food/service), written reviews, photos, vendor responses
+7. Real-time: Order tracking, status updates, group order sync (Supabase Realtime)
+8. Sound Effects: Add to cart, order placed, notifications, button clicks (Howler.js)
+9. Animations: Page transitions, card hovers, loading skeletons, success confetti (Framer Motion)
+
+UI/UX:
+- Swiggy orange (#FC8019) color scheme
+- Responsive mobile-first design
+- Smooth animations throughout
+- Toast notifications
+- Floating cart button
+
+KEY PAGES:
+- Landing: Hero, vendor carousel, categories
+- Student Dashboard: Browse vendors, RFID balance, active orders, group invites
+- Vendor Dashboard: Order queue, menu management, analytics, reviews
+- Admin Dashboard: Metrics, vendor/student management, RFID credits, moderation
+- Menu: Food cards with images/ratings, add to cart, customization
+- Checkout: Cart review, payment selection, group order toggle
+- Order Tracking: Status timeline, pickup code (6-digit), live updates
+- Group Order: Share link, participant list, real-time items, split payment
+
+DATABASE SCHEMA:
+Users, Vendors, MenuItems, Orders, GroupOrders, Reviews, Transactions tables
+
+SAMPLE DATA:
+3 students with RFID cards (500-750 points each)
+4 vendors (Campus Canteen, Quick Bites, Juice Junction, Dosa Point)
+15+ menu items with images, prices, prep times
+
+SPECIAL FEATURES:
+- QR code on invoice for pickup verification
+- 6-digit pickup codes
+- RFID balance display and transaction history
+- Group order expiration (30 min)
+- Sound mute toggle
+- Review moderation
+- Payment success rate simulation (90%)
+- Skeleton loaders
+
+Make it fully functional, animated, smooth, and production-ready with demo credentials.
+    </full_prompt>
+  </example_prompt_for_ai_tools>
+
+  <credentials_for_demo>
+    <student>
+      Email: john.doe@mec.edu
+      Password: student123
+      RFID: 1234567890
+      Balance: 500 points
+    </student>
+    <vendor>
+      Email: canteen@mec.edu
+      Password: vendor123
+      Shop: Campus Canteen
+    </vendor>
+    <admin>
+      Email: admin@mec.edu
+      Password: admin123
+      Role: System Administrator
+    </admin>
+  </credentials_for_demo>
+</project_prompt>

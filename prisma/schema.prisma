@@ -1,0 +1,132 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  passwordHash  String
+  role          String
+  rfidNumber    String?  @unique
+  rfidBalance   Float?   @default(0)
+  fullName      String
+  phoneNumber   String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  vendor        Vendor?
+  orders        Order[]
+  reviews       Review[]
+  transactions  Transaction[]
+  groupOrdersCreated GroupOrder[]
+}
+
+model Vendor {
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  shopName      String
+  description   String
+  imageUrl      String
+  averageRating Float    @default(0)
+  totalReviews  Int      @default(0)
+  isActive      Boolean  @default(true)
+  openingHours  String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  menuItems     MenuItem[]
+  orders        Order[]
+  reviews       Review[]
+}
+
+model MenuItem {
+  id              String   @id @default(uuid())
+  vendorId        String
+  vendor          Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  name            String
+  description     String
+  price           Float
+  imageUrl        String
+  category        String
+  isAvailable     Boolean  @default(true)
+  preparationTime Int
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Order {
+  id              String        @id @default(uuid())
+  orderNumber     String        @unique
+  studentId       String
+  student         User          @relation(fields: [studentId], references: [id])
+  vendorId        String
+  vendor          Vendor        @relation(fields: [vendorId], references: [id])
+  isGroupOrder    Boolean       @default(false)
+  groupOrderId    String?
+  groupOrder      GroupOrder?   @relation(fields: [groupOrderId], references: [id])
+  items           String
+  subtotal        Float
+  tax             Float
+  totalAmount     Float
+  paymentMethod   String
+  paymentStatus   String
+  orderStatus     String
+  pickupCode      String        @unique
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  pickedUpAt      DateTime?
+
+  review          Review?
+  transaction     Transaction?
+}
+
+model GroupOrder {
+  id              String   @id @default(uuid())
+  creatorId       String
+  creator         User     @relation(fields: [creatorId], references: [id])
+  shareLink       String   @unique
+  vendorId        String
+  isFinalized     Boolean  @default(false)
+  participantCount Int     @default(1)
+  splitType       String
+  createdAt       DateTime @default(now())
+  expiresAt       DateTime
+
+  orders          Order[]
+}
+
+model Review {
+  id              String   @id @default(uuid())
+  orderId         String   @unique
+  order           Order    @relation(fields: [orderId], references: [id])
+  studentId       String
+  student         User     @relation(fields: [studentId], references: [id])
+  vendorId        String
+  vendor          Vendor   @relation(fields: [vendorId], references: [id])
+  foodRating      Int
+  serviceRating   Int
+  comment         String?
+  images          String?
+  vendorResponse  String?
+  createdAt       DateTime @default(now())
+}
+
+model Transaction {
+  id              String          @id @default(uuid())
+  studentId       String
+  student         User            @relation(fields: [studentId], references: [id])
+  orderId         String?         @unique
+  order           Order?          @relation(fields: [orderId], references: [id])
+  transactionType String
+  amount          Float
+  previousBalance Float
+  newBalance      Float
+  description     String
+  createdAt       DateTime        @default(now())
+}
