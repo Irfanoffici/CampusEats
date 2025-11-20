@@ -14,33 +14,45 @@ export const authOptions: NextAuthOptions = {
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
+        console.log('[Auth] Starting authentication process')
+        console.log('[Auth] Credentials provided:', !!credentials?.email, !!credentials?.password)
+        
         if (!credentials?.email || !credentials?.password) {
+          console.log('[Auth] Missing credentials')
           throw new Error('Invalid credentials')
         }
 
         // Check if Firebase is available and use it as primary
+        console.log('[Auth] Firebase available:', !!firestore)
         if (firestore) {
           try {
+            console.log('[Auth] Attempting Firebase authentication for:', credentials.email)
             const usersRef = collection(firestore, 'users')
             const q = query(usersRef, where('email', '==', credentials.email))
             const snapshot = await getDocs(q)
             
             if (snapshot.empty) {
+              console.log('[Auth] User not found in Firebase')
               throw new Error('User not found')
             }
             
             const userDoc = snapshot.docs[0]
             const userData = userDoc.data()
+            console.log('[Auth] User found in Firebase:', userData.email, userData.role)
             
             // Compare password (assuming it's stored as bcrypt hash in Firebase too)
+            console.log('[Auth] Comparing passwords...')
             const isPasswordValid = await bcrypt.compare(
               credentials.password,
               userData.passwordHash
             )
             
             if (!isPasswordValid) {
+              console.log('[Auth] Invalid password')
               throw new Error('Invalid password')
             }
+            
+            console.log('[Auth] Password valid, preparing user object')
             
             // Get vendor info if exists
             let vendorId = null
@@ -56,7 +68,7 @@ export const authOptions: NextAuthOptions = {
               }
             }
             
-            return {
+            const userObject = {
               id: userDoc.id,
               email: userData.email,
               name: userData.fullName,
@@ -65,6 +77,9 @@ export const authOptions: NextAuthOptions = {
               rfidBalance: userData.rfidBalance,
               vendorId: vendorId,
             }
+            
+            console.log('[Auth] Authentication successful:', userObject)
+            return userObject
           } catch (error) {
             console.error('[Auth] Firebase auth failed:', error)
             // Fall back to Prisma
@@ -72,24 +87,29 @@ export const authOptions: NextAuthOptions = {
         }
 
         // Fallback to Prisma/SQLite
+        console.log('[Auth] Falling back to Prisma authentication')
         const user = await prisma.user.findUnique({
           where: { email: credentials.email },
           include: { vendor: true },
         })
 
         if (!user) {
+          console.log('[Auth] User not found in Prisma')
           throw new Error('User not found')
         }
 
+        console.log('[Auth] User found in Prisma:', user.email, user.role)
         const isPasswordValid = await bcrypt.compare(
           credentials.password,
           user.passwordHash
         )
 
         if (!isPasswordValid) {
+          console.log('[Auth] Invalid password in Prisma')
           throw new Error('Invalid password')
         }
 
+        console.log('[Auth] Prisma authentication successful')
         return {
           id: user.id,
           email: user.email,
@@ -105,6 +125,7 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
+        console.log('[Auth] Setting JWT token data:', user)
         token.id = user.id
         token.role = user.role
         token.rfidNumber = user.rfidNumber
