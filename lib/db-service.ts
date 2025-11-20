@@ -504,28 +504,41 @@ export class DatabaseService {
       return this.executeQuery(
         // Firebase (PRIMARY)
         async () => {
+          console.log(`[DB-Service] Firebase: Fetching user with vendor for user ${userId}`)
           const usersRef = collection(firestore!, 'users')
           const q = query(usersRef, where('id', '==', userId))
           const snapshot = await getDocs(q)
           
-          if (snapshot.empty) return null
+          if (snapshot.empty) {
+            console.log(`[DB-Service] Firebase: User ${userId} not found`)
+            return null
+          }
+          
           const userData = snapshot.docs[0].data()
+          console.log(`[DB-Service] Firebase: User data:`, userData)
           
           // Get vendor if exists
-          if (userData.vendorId) {
+          if (userData.role === 'VENDOR') {
+            console.log(`[DB-Service] Firebase: User is vendor, fetching vendor data`)
             const vendorsRef = collection(firestore!, 'vendors')
             const vendorQuery = query(vendorsRef, where('userId', '==', userId))
             const vendorSnap = await getDocs(vendorQuery)
             
             if (!vendorSnap.empty) {
+              console.log(`[DB-Service] Firebase: Vendor found`)
               userData.vendor = { id: vendorSnap.docs[0].id, ...vendorSnap.docs[0].data() }
+            } else {
+              console.log(`[DB-Service] Firebase: No vendor found for user ${userId}`)
             }
           }
           
-          return { id: snapshot.docs[0].id, ...userData }
+          const result = { id: snapshot.docs[0].id, ...userData }
+          console.log(`[DB-Service] Firebase: Final user with vendor data:`, result)
+          return result
         },
         // Prisma fallback (SECONDARY)
         async () => {
+          console.log(`[DB-Service] Prisma: Fetching user with vendor for user ${userId}`)
           return await prisma.user.findUnique({
             where: { id: userId },
             include: { vendor: true }
@@ -542,6 +555,7 @@ export class DatabaseService {
       return this.executeQuery(
         // Prisma (PRIMARY)
         async () => {
+          console.log(`[DB-Service] Prisma: Fetching user with vendor for user ${userId} (primary)`)
           return await prisma.user.findUnique({
             where: { id: userId },
             include: { vendor: true }
@@ -562,6 +576,7 @@ export class DatabaseService {
       return this.executeQuery(
         // Firebase (PRIMARY)
         async () => {
+          console.log(`[DB-Service] Firebase: Fetching menu items for vendor ${vendorId}`)
           const menuRef = collection(firestore!, 'menuItems')
           const q = query(
             menuRef,
@@ -570,10 +585,14 @@ export class DatabaseService {
             orderBy('category', 'asc')
           )
           const snapshot = await getDocs(q)
-          return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+          console.log(`[DB-Service] Firebase: Found ${snapshot.docs.length} menu items`)
+          const menuItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+          console.log('[DB-Service] Firebase: Menu items data:', menuItems)
+          return menuItems
         },
         // Prisma fallback (SECONDARY)
         async () => {
+          console.log(`[DB-Service] Prisma: Fetching menu items for vendor ${vendorId}`)
           return await prisma.menuItem.findMany({
             where: {
               vendorId,
@@ -595,6 +614,7 @@ export class DatabaseService {
       return this.executeQuery(
         // Prisma (PRIMARY)
         async () => {
+          console.log(`[DB-Service] Prisma: Fetching menu items for vendor ${vendorId} (primary)`)
           return await prisma.menuItem.findMany({
             where: {
               vendorId,
@@ -620,6 +640,7 @@ export class DatabaseService {
       return this.executeQuery(
         // Firebase (PRIMARY)
         async () => {
+          console.log('[DB-Service] Firebase: Fetching active vendors')
           const vendorsRef = collection(firestore!, 'vendors')
           const q = query(
             vendorsRef,
@@ -627,10 +648,14 @@ export class DatabaseService {
             orderBy('averageRating', 'desc')
           )
           const snapshot = await getDocs(q)
-          return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+          console.log(`[DB-Service] Firebase: Found ${snapshot.docs.length} vendors`)
+          const vendors = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+          console.log('[DB-Service] Firebase: Vendor data:', vendors)
+          return vendors
         },
         // Prisma fallback (SECONDARY)
         async () => {
+          console.log('[DB-Service] Prisma: Fetching active vendors')
           return await prisma.vendor.findMany({
             where: { isActive: true },
             include: {
@@ -657,6 +682,7 @@ export class DatabaseService {
       return this.executeQuery(
         // Prisma (PRIMARY)
         async () => {
+          console.log('[DB-Service] Prisma: Fetching active vendors (primary)')
           return await prisma.vendor.findMany({
             where: { isActive: true },
             include: {
