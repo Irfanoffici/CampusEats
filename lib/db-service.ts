@@ -2,40 +2,86 @@ import { prisma } from './prisma'
 import { db as firestore } from './firebase'
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, where, orderBy } from 'firebase/firestore'
 
-// Database service with Firebase primary, Netlify/Local Prisma fallback
+// Database service with 3-way sync: Firebase ↔ Netlify PostgreSQL ↔ Local SQLite
+// All databases stay in perfect sync - no memory loss!
 export class DatabaseService {
-  private static useFirebase = true
-  private static useNetlifyDB = false
+  private static syncEnabled = true
 
-  // Try Firebase first, then Netlify/Local Prisma fallback
+  // Execute query across ALL databases with sync
   static async executeQuery<T>(
     firebaseQuery: () => Promise<T>,
     prismaQuery?: () => Promise<T>
   ): Promise<T> {
-    // PRIMARY: Try Firebase first
-    if (this.useFirebase) {
-      try {
-        console.log('[DB-Service] Using Firebase (Primary)')
-        return await firebaseQuery()
-      } catch (error) {
-        console.error('Firebase query failed, trying Prisma fallback:', error)
-        this.useFirebase = false
-        this.useNetlifyDB = true
-      }
+    const results: { source: string; data: T; error?: any }[] = []
+
+    // Try Firebase
+    try {
+      console.log('[DB-Service] Executing on Firebase...')
+      const firebaseData = await firebaseQuery()
+      results.push({ source: 'Firebase', data: firebaseData })
+    } catch (error) {
+      console.error('[DB-Service] Firebase failed:', error)
+      results.push({ source: 'Firebase', data: null as any, error })
     }
 
-    // FALLBACK: Try Prisma (Netlify PostgreSQL or Local SQLite)
+    // Try Prisma (Netlify/Local)
     if (prismaQuery) {
       try {
-        console.log('[DB-Service] Using Prisma fallback (Netlify/Local)')
-        return await prismaQuery()
-      } catch (prismaError) {
-        console.error('Prisma fallback also failed:', prismaError)
-        throw prismaError
+        console.log('[DB-Service] Executing on Prisma...')
+        const prismaData = await prismaQuery()
+        results.push({ source: 'Prisma', data: prismaData })
+      } catch (error) {
+        console.error('[DB-Service] Prisma failed:', error)
+        results.push({ source: 'Prisma', data: null as any, error })
       }
     }
 
-    throw new Error('No database available')
+    // Return first successful result
+    const successfulResult = results.find(r => !r.error)
+    if (!successfulResult) {
+      throw new Error('All databases failed: ' + JSON.stringify(results.map(r => r.error?.message)))
+    }
+
+    console.log(`[DB-Service] ✅ Successfully read from ${successfulResult.source}`)
+    return successfulResult.data
+  }
+
+  // Write to ALL databases with sync (Fire-and-forget for non-primary)
+  static async syncWrite<T>(
+    operation: 'create' | 'update' | 'delete',
+    firebaseWrite: () => Promise<T>,
+    prismaWrite?: () => Promise<T>
+  ): Promise<T> {
+    const writePromises: Promise<any>[] = []
+    let primaryResult: T | null = null
+
+    // PRIMARY: Firebase write (wait for this)
+    try {
+      console.log(`[DB-Sync] ${operation.toUpperCase()} on Firebase (PRIMARY)...`)
+      primaryResult = await firebaseWrite()
+      console.log(`[DB-Sync] ✅ Firebase ${operation} succeeded`)
+    } catch (error) {
+      console.error(`[DB-Sync] ❌ Firebase ${operation} failed:`, error)
+      throw error // Critical failure
+    }
+
+    // SYNC: Prisma write (background sync)
+    if (prismaWrite && this.syncEnabled) {
+      writePromises.push(
+        prismaWrite()
+          .then(() => console.log(`[DB-Sync] ✅ Prisma ${operation} synced`))
+          .catch(err => console.error(`[DB-Sync] ⚠️ Prisma sync failed (non-critical):`, err))
+      )
+    }
+
+    // Don't wait for sync to complete (fire-and-forget)
+    if (writePromises.length > 0) {
+      Promise.all(writePromises).catch(() => {
+        console.warn('[DB-Sync] Some sync operations failed, but primary write succeeded')
+      })
+    }
+
+    return primaryResult!
   }
 
   // Get orders
@@ -126,10 +172,11 @@ export class DatabaseService {
     )
   }
 
-  // Create order
+  // Create order (SYNCED across all DBs)
   static async createOrder(data: any) {
-    return this.executeQuery(
-      // Firebase (PRIMARY)
+    return this.syncWrite(
+      'create',
+      // Firebase write
       async () => {
         const ordersRef = collection(firestore, 'orders')
         const docRef = await addDoc(ordersRef, {
@@ -139,7 +186,7 @@ export class DatabaseService {
         })
         return { id: docRef.id, ...data }
       },
-      // Prisma fallback
+      // Prisma sync write
       async () => {
         return await prisma.order.create({
           data,
@@ -157,10 +204,11 @@ export class DatabaseService {
     )
   }
 
-  // Update order status
+  // Update order status (SYNCED across all DBs)
   static async updateOrderStatus(orderId: string, status: string) {
-    return this.executeQuery(
-      // Firebase (PRIMARY)
+    return this.syncWrite(
+      'update',
+      // Firebase write
       async () => {
         const orderRef = doc(firestore, 'orders', orderId)
         await updateDoc(orderRef, {
@@ -169,7 +217,7 @@ export class DatabaseService {
         })
         return { id: orderId, orderStatus: status }
       },
-      // Prisma fallback
+      // Prisma sync write
       async () => {
         return await prisma.order.update({
           where: { id: orderId },

@@ -11,6 +11,7 @@
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
     "db:health": "tsx scripts/db-health.ts",
+    "db:migrate-firebase": "tsx scripts/migrate-to-firebase.ts",
     "test": "tsx scripts/test-system.ts",
     "optimize": "tsx scripts/optimize.ts"
   },
