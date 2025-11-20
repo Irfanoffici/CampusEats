@@ -7,4 +7,4 @@
 
 [build.environment]
   NODE_VERSION = "18"
-  DATABASE_URL = "${NETLIFY_DATABASE_URL}"
+  DATABASE_URL = "file:./dev.db"
