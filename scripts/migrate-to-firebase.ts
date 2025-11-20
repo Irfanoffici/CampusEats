@@ -10,6 +10,12 @@ import { collection, doc, setDoc, writeBatch } from 'firebase/firestore'
 async function migrateToFirebase() {
   console.log('\n🔄 Starting Database Migration to Firebase...\n')
 
+  // Check if Firebase is available
+  if (!firestore) {
+    console.log('⏭️  Firebase not configured, skipping migration')
+    return
+  }
+
   try {
     // Migrate Users
     console.log('📦 Migrating Users...')
