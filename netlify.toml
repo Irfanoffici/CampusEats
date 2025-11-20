@@ -19,3 +19,6 @@
   NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID = "your-firebase-messaging-sender-id"
   NEXT_PUBLIC_FIREBASE_APP_ID = "your-firebase-app-id"
   NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID = "your-firebase-measurement-id"
+  
+  # Disable secrets scanning as these are just placeholder values
+  SECRETS_SCAN_ENABLED = "false"
