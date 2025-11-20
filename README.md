@@ -75,7 +75,12 @@ npm install
 
 3. **Set up environment variables**
 
-Create `.env.local` file:
+Copy the example environment file and update with your values:
+```bash
+cp .env.example .env.local
+```
+
+Then edit `.env.local` with your actual values:
 ```env
 # Database
 DATABASE_URL="file:./dev.db"
@@ -322,6 +327,9 @@ Required variables:
 Optional (Firebase fallback):
 - `NEXT_PUBLIC_FIREBASE_*` - Firebase credentials
 
+**Important Security Note:** 
+Never commit actual secrets to version control. Use `.env.local` for development and set environment variables in your hosting platform for production. See `.env.example` for the required variables.
+
 ---
 
 ## 🚦 Deployment
@@ -333,14 +341,16 @@ npm run build
 npm start
 ```
 
-### Deploy to Vercel
+### Deploy to Netlify
 
-```bash
-vercel deploy
-```
+1. Connect your repository to Netlify
+2. Set the build command to: `npm run build`
+3. Set the publish directory to: `.next`
+4. Add all environment variables from `.env.local` to Netlify's environment variables section
+5. Deploy automatically on push
 
 ### Environment Setup
-1. Add all `.env.local` variables to Vercel
+1. Add all environment variables to your hosting platform
 2. Connect your repository
 3. Deploy automatically on push
 
