@@ -8,8 +8,8 @@
 [build.environment]
   NODE_VERSION = "18"
   DATABASE_URL = "file:./dev.db"
-  NEXTAUTH_URL = "https://your-site-name.netlify.app"
-  NEXTAUTH_SECRET = "your-nextauth-secret-here"
+  NEXTAUTH_URL = "https://campuseatsmec.netlify.app"
+  NEXTAUTH_SECRET = "d50e8358a7a93631a0171990d46611f0"
   
   # Firebase Configuration (these will be overridden by Netlify environment variables)
   NEXT_PUBLIC_FIREBASE_API_KEY = "your-firebase-api-key"
