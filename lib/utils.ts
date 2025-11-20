@@ -23,9 +23,44 @@ export function formatCurrency(amount: number): string {
   return `₹${amount.toFixed(2)}`
 }
 
-export function formatDate(date: Date): string {
-  return new Intl.DateTimeFormat('en-IN', {
-    dateStyle: 'medium',
-    timeStyle: 'short'
-  }).format(new Date(date))
+export function formatDate(date: any): string {
+  if (!date) return 'N/A'
+  
+  try {
+    let dateObj: Date
+    
+    // Handle Firebase Timestamp
+    if (date?.toDate && typeof date.toDate === 'function') {
+      dateObj = date.toDate()
+    }
+    // Handle Firestore Timestamp object with seconds
+    else if (date?.seconds) {
+      dateObj = new Date(date.seconds * 1000)
+    }
+    // Handle ISO string or number
+    else if (typeof date === 'string' || typeof date === 'number') {
+      dateObj = new Date(date)
+    }
+    // Already a Date object
+    else if (date instanceof Date) {
+      dateObj = date
+    }
+    // Fallback
+    else {
+      dateObj = new Date(date)
+    }
+    
+    // Validate date is valid
+    if (isNaN(dateObj.getTime())) {
+      return 'Invalid Date'
+    }
+    
+    return new Intl.DateTimeFormat('en-IN', {
+      dateStyle: 'medium',
+      timeStyle: 'short'
+    }).format(dateObj)
+  } catch (error) {
+    console.error('Date formatting error:', error)
+    return 'Invalid Date'
+  }
 }

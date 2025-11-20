@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
+import { DatabaseService } from '@/lib/db-service'
 
 export async function POST(request: Request) {
   try {
@@ -13,32 +13,23 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { orderId, foodRating, serviceRating, comment, images } = body
 
-    const review = await prisma.review.create({
-      data: {
-        orderId,
-        studentId: session.user.id,
-        vendorId: body.vendorId,
-        foodRating,
-        serviceRating,
-        comment,
-        images: images ? JSON.stringify(images) : null,
-      },
+    const review = await DatabaseService.createReview({
+      orderId,
+      studentId: session.user.id,
+      vendorId: body.vendorId,
+      foodRating,
+      serviceRating,
+      comment: comment || null,
+      images: images ? JSON.stringify(images) : null,
     })
 
-    // Update vendor's average rating
-    const allReviews = await prisma.review.findMany({
-      where: { vendorId: body.vendorId },
-    })
+    // Get all reviews for this vendor to update rating
+    const allReviews = await DatabaseService.getReviewsByVendor(body.vendorId)
 
-    const avgRating = allReviews.reduce((sum: number, r: { foodRating: number; serviceRating: number }) => sum + (r.foodRating + r.serviceRating) / 2, 0) / allReviews.length
+    const avgRating = allReviews.reduce((sum: number, r: any) => sum + (r.foodRating + r.serviceRating) / 2, 0) / allReviews.length
 
-    await prisma.vendor.update({
-      where: { id: body.vendorId },
-      data: {
-        averageRating: avgRating,
-        totalReviews: allReviews.length,
-      },
-    })
+    // Update vendor rating (SYNCED)
+    await DatabaseService.updateVendorRating(body.vendorId, avgRating, allReviews.length)
 
     return NextResponse.json(review)
   } catch (error) {
@@ -56,21 +47,10 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Vendor ID required' }, { status: 400 })
     }
 
-    const reviews = await prisma.review.findMany({
-      where: { vendorId },
-      include: {
-        student: {
-          select: {
-            fullName: true,
-          },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-    })
-
-    return NextResponse.json(reviews)
+    const reviews = await DatabaseService.getReviewsByVendor(vendorId)
+    return NextResponse.json(reviews || [])
   } catch (error) {
     console.error('Error fetching reviews:', error)
-    return NextResponse.json({ error: 'Failed to fetch reviews' }, { status: 500 })
+    return NextResponse.json([], { status: 200 })
   }
 }

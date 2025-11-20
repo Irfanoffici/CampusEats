@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
+import { DatabaseService } from '@/lib/db-service'
 
 export async function POST(
   request: Request,
@@ -16,10 +16,7 @@ export async function POST(
     const body = await request.json()
     const { pickupCode } = body
 
-    const order = await prisma.order.findUnique({
-      where: { id: params.orderId },
-      include: { student: true },
-    })
+    const order: any = await DatabaseService.getOrderById(params.orderId)
 
     if (!order) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 })
@@ -29,36 +26,25 @@ export async function POST(
       return NextResponse.json({ error: 'Invalid pickup code' }, { status: 400 })
     }
 
-    // Update order status
-    const updatedOrder = await prisma.order.update({
-      where: { id: params.orderId },
-      data: {
-        orderStatus: 'PICKED_UP',
-        paymentStatus: 'COMPLETED',
-        pickedUpAt: new Date(),
-      },
+    // Update order status (SYNCED)
+    const updatedOrder = await DatabaseService.confirmOrderPickup(params.orderId, {
+      orderStatus: 'PICKED_UP',
+      paymentStatus: 'COMPLETED',
     })
 
-    // Deduct RFID balance if payment method is RFID
-    if (order.paymentMethod === 'RFID' && order.student.rfidBalance !== null) {
-      const newBalance = order.student.rfidBalance - order.totalAmount
+    // Deduct RFID balance if payment method is RFID (SYNCED)
+    if (order.paymentMethod === 'RFID') {
+      await DatabaseService.updateUserBalance(order.studentId, order.totalAmount, false)
 
-      await prisma.user.update({
-        where: { id: order.studentId },
-        data: { rfidBalance: newBalance },
-      })
-
-      // Create transaction record
-      await prisma.transaction.create({
-        data: {
-          studentId: order.studentId,
-          orderId: order.id,
-          transactionType: 'DEBIT',
-          amount: order.totalAmount,
-          previousBalance: order.student.rfidBalance,
-          newBalance,
-          description: `Order ${order.orderNumber} payment`,
-        },
+      // Create transaction record (SYNCED)
+      await DatabaseService.createTransaction({
+        studentId: order.studentId,
+        orderId: order.id,
+        transactionType: 'DEBIT',
+        amount: order.totalAmount,
+        previousBalance: order.student?.rfidBalance || 0,
+        newBalance: (order.student?.rfidBalance || 0) - order.totalAmount,
+        description: `Order ${order.orderNumber} payment`,
       })
     }
 

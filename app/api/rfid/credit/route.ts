@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
+import { DatabaseService } from '@/lib/db-service'
 
 export const dynamic = 'force-dynamic'
 
@@ -29,9 +29,7 @@ export async function POST(request: Request) {
     console.log(`\n💳 [RFID CREDIT] Admin ${session.user.email} crediting ₹${creditAmount} to RFID ${rfidNumber}`)
 
     // Find user by RFID number
-    const user = await prisma.user.findFirst({
-      where: { rfidNumber },
-    })
+    const user: any = await DatabaseService.getUserByRFID(rfidNumber)
 
     if (!user) {
       return NextResponse.json({ error: 'User with this RFID number not found' }, { status: 404 })
@@ -40,15 +38,8 @@ export async function POST(request: Request) {
     console.log(`   User: ${user.fullName} (${user.email})`)
     console.log(`   Current Balance: ₹${user.rfidBalance}`)
 
-    // Credit the balance
-    const updatedUser = await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        rfidBalance: {
-          increment: creditAmount,
-        },
-      },
-    })
+    // Credit the balance (SYNCED across all DBs)
+    const updatedUser = await DatabaseService.updateUserBalance(user.id, creditAmount, true)
 
     console.log(`   New Balance: ₹${updatedUser.rfidBalance}`)
     console.log(`✅ [RFID CREDIT] Success!\n`)
@@ -56,9 +47,9 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       user: {
-        fullName: updatedUser.fullName,
-        email: updatedUser.email,
-        rfidNumber: updatedUser.rfidNumber,
+        fullName: user.fullName,
+        email: user.email,
+        rfidNumber: user.rfidNumber,
         previousBalance: user.rfidBalance,
         newBalance: updatedUser.rfidBalance,
         creditedAmount: creditAmount,

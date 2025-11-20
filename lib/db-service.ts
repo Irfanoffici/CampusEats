@@ -113,7 +113,48 @@ export class DatabaseService {
         }
         
         const snapshot = await getDocs(q)
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+        const orders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+        
+        // Populate student and vendor details for each order
+        const populatedOrders = await Promise.all(orders.map(async (order: any) => {
+          try {
+            // Get student details
+            if (order.studentId) {
+              const studentsRef = collection(firestore, 'users')
+              const studentQuery = query(studentsRef, where('id', '==', order.studentId))
+              const studentSnap = await getDocs(studentQuery)
+              
+              if (!studentSnap.empty) {
+                const studentData = studentSnap.docs[0].data()
+                order.student = {
+                  fullName: studentData.fullName || 'Unknown Student',
+                  phoneNumber: studentData.phoneNumber || 'N/A'
+                }
+              }
+            }
+            
+            // Get vendor details
+            if (order.vendorId) {
+              const vendorsRef = collection(firestore, 'vendors')
+              const vendorQuery = query(vendorsRef, where('id', '==', order.vendorId))
+              const vendorSnap = await getDocs(vendorQuery)
+              
+              if (!vendorSnap.empty) {
+                const vendorData = vendorSnap.docs[0].data()
+                order.vendor = {
+                  shopName: vendorData.shopName || 'Unknown Vendor'
+                }
+              }
+            }
+          } catch (error) {
+            console.error(`[DB-Service] Error populating order ${order.id}:`, error)
+          }
+          
+          return order
+        }))
+        
+        console.log(`[DB-Service] Firebase: Returning ${populatedOrders.length} orders with populated data`)
+        return populatedOrders
       },
       // Prisma fallback (SECONDARY)
       async () => {
@@ -174,17 +215,42 @@ export class DatabaseService {
 
   // Create order (SYNCED across all DBs)
   static async createOrder(data: any) {
+    // Sanitize data for Firebase (convert undefined to null)
+    const sanitizeForFirebase = (obj: any): any => {
+      const sanitized: any = {}
+      for (const key in obj) {
+        if (obj[key] === undefined) {
+          sanitized[key] = null
+        } else if (obj[key] instanceof Date) {
+          sanitized[key] = obj[key]
+        } else if (typeof obj[key] === 'object' && obj[key] !== null) {
+          sanitized[key] = sanitizeForFirebase(obj[key])
+        } else {
+          sanitized[key] = obj[key]
+        }
+      }
+      return sanitized
+    }
+
     return this.syncWrite(
       'create',
       // Firebase write
       async () => {
         const ordersRef = collection(firestore, 'orders')
+        const sanitizedData = sanitizeForFirebase(data)
         const docRef = await addDoc(ordersRef, {
-          ...data,
+          ...sanitizedData,
+          id: data.id || null, // Store the Prisma ID for cross-DB queries
           createdAt: new Date(),
           updatedAt: new Date(),
         })
-        return { id: docRef.id, ...data }
+        
+        // Update the document with its own Firebase ID if no Prisma ID was provided
+        if (!data.id) {
+          await updateDoc(docRef, { id: docRef.id })
+        }
+        
+        return { id: data.id || docRef.id, ...data }
       },
       // Prisma sync write
       async () => {
@@ -210,11 +276,18 @@ export class DatabaseService {
       'update',
       // Firebase write
       async () => {
-        const orderRef = doc(firestore, 'orders', orderId)
-        await updateDoc(orderRef, {
+        const ordersRef = collection(firestore, 'orders')
+        const q = query(ordersRef, where('id', '==', orderId))
+        const snapshot = await getDocs(q)
+        
+        if (snapshot.empty) throw new Error('Order not found in Firebase')
+        
+        const orderDocRef = doc(firestore, 'orders', snapshot.docs[0].id)
+        await updateDoc(orderDocRef, {
           orderStatus: status,
           updatedAt: new Date(),
         })
+        
         return { id: orderId, orderStatus: status }
       },
       // Prisma sync write
@@ -222,6 +295,37 @@ export class DatabaseService {
         return await prisma.order.update({
           where: { id: orderId },
           data: { orderStatus: status },
+        })
+      }
+    )
+  }
+
+  // Update order status and payment status (SYNCED across all DBs)
+  static async updateOrderStatusAndPayment(orderId: string, orderStatus: string, paymentStatus: string) {
+    return this.syncWrite(
+      'update',
+      // Firebase write
+      async () => {
+        const ordersRef = collection(firestore, 'orders')
+        const q = query(ordersRef, where('id', '==', orderId))
+        const snapshot = await getDocs(q)
+        
+        if (snapshot.empty) throw new Error('Order not found in Firebase')
+        
+        const orderDocRef = doc(firestore, 'orders', snapshot.docs[0].id)
+        await updateDoc(orderDocRef, {
+          orderStatus,
+          paymentStatus,
+          updatedAt: new Date(),
+        })
+        
+        return { id: orderId, orderStatus, paymentStatus }
+      },
+      // Prisma sync write
+      async () => {
+        return await prisma.order.update({
+          where: { id: orderId },
+          data: { orderStatus, paymentStatus },
         })
       }
     )
@@ -322,6 +426,359 @@ export class DatabaseService {
             averageRating: 'desc',
           },
         })
+      }
+    )
+  }
+
+  // Get all users (Admin only)
+  static async getAllUsers() {
+    return this.executeQuery(
+      // Firebase (PRIMARY)
+      async () => {
+        const usersRef = collection(firestore, 'users')
+        const q = query(usersRef, orderBy('createdAt', 'desc'))
+        const snapshot = await getDocs(q)
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+      },
+      // Prisma fallback
+      async () => {
+        return await prisma.user.findMany({
+          select: {
+            id: true,
+            email: true,
+            fullName: true,
+            role: true,
+            phoneNumber: true,
+            rfidNumber: true,
+            rfidBalance: true,
+            createdAt: true,
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
+        })
+      }
+    )
+  }
+
+  // Get user balance
+  static async getUserBalance(userId: string) {
+    return this.executeQuery(
+      // Firebase (PRIMARY)
+      async () => {
+        const usersRef = collection(firestore, 'users')
+        const q = query(usersRef, where('id', '==', userId))
+        const snapshot = await getDocs(q)
+        
+        if (snapshot.empty) return null
+        const userData = snapshot.docs[0].data()
+        return {
+          rfidBalance: userData.rfidBalance,
+          rfidNumber: userData.rfidNumber,
+        }
+      },
+      // Prisma fallback
+      async () => {
+        return await prisma.user.findUnique({
+          where: { id: userId },
+          select: { rfidBalance: true, rfidNumber: true },
+        })
+      }
+    )
+  }
+
+  // Update user RFID balance (SYNCED)
+  static async updateUserBalance(userId: string, amount: number, isCredit: boolean = true) {
+    return this.syncWrite(
+      'update',
+      // Firebase write
+      async () => {
+        const usersRef = collection(firestore, 'users')
+        const q = query(usersRef, where('id', '==', userId))
+        const snapshot = await getDocs(q)
+        
+        if (snapshot.empty) throw new Error('User not found')
+        
+        const userData = snapshot.docs[0].data()
+        const currentBalance = userData.rfidBalance || 0
+        const newBalance = isCredit ? currentBalance + amount : currentBalance - amount
+        
+        const userRef = doc(firestore, 'users', snapshot.docs[0].id)
+        await updateDoc(userRef, {
+          rfidBalance: newBalance,
+          updatedAt: new Date(),
+        })
+        
+        return { ...userData, id: userId, rfidBalance: newBalance }
+      },
+      // Prisma sync write
+      async () => {
+        return await prisma.user.update({
+          where: { id: userId },
+          data: {
+            rfidBalance: {
+              [isCredit ? 'increment' : 'decrement']: amount,
+            },
+          },
+        })
+      }
+    )
+  }
+
+  // Get user by RFID number
+  static async getUserByRFID(rfidNumber: string) {
+    return this.executeQuery(
+      // Firebase (PRIMARY)
+      async () => {
+        const usersRef = collection(firestore, 'users')
+        const q = query(usersRef, where('rfidNumber', '==', rfidNumber))
+        const snapshot = await getDocs(q)
+        
+        if (snapshot.empty) return null
+        return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() }
+      },
+      // Prisma fallback
+      async () => {
+        return await prisma.user.findFirst({
+          where: { rfidNumber },
+        })
+      }
+    )
+  }
+
+  // Get order by ID
+  static async getOrderById(orderId: string) {
+    return this.executeQuery(
+      // Firebase (PRIMARY)
+      async () => {
+        const ordersRef = collection(firestore, 'orders')
+        const q = query(ordersRef, where('id', '==', orderId))
+        const orderSnap = await getDocs(q)
+        
+        if (orderSnap.empty) return null
+        const orderData = orderSnap.docs[0].data()
+        return { id: orderSnap.docs[0].id, ...orderData }
+      },
+      // Prisma fallback
+      async () => {
+        return await prisma.order.findUnique({
+          where: { id: orderId },
+          include: { student: true },
+        })
+      }
+    )
+  }
+
+  // Create menu item (SYNCED)
+  static async createMenuItem(data: any) {
+    return this.syncWrite(
+      'create',
+      // Firebase write
+      async () => {
+        const menuRef = collection(firestore, 'menuItems')
+        const docRef = await addDoc(menuRef, {
+          ...data,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })
+        return { id: docRef.id, ...data }
+      },
+      // Prisma sync write
+      async () => {
+        return await prisma.menuItem.create({ data })
+      }
+    )
+  }
+
+  // Update menu item (SYNCED)
+  static async updateMenuItem(id: string, data: any) {
+    return this.syncWrite(
+      'update',
+      // Firebase write
+      async () => {
+        const menuRef = collection(firestore, 'menuItems')
+        const q = query(menuRef, where('id', '==', id))
+        const snapshot = await getDocs(q)
+        
+        if (snapshot.empty) throw new Error('Menu item not found')
+        
+        const itemRef = doc(firestore, 'menuItems', snapshot.docs[0].id)
+        await updateDoc(itemRef, {
+          ...data,
+          updatedAt: new Date(),
+        })
+        
+        return { id, ...data }
+      },
+      // Prisma sync write
+      async () => {
+        return await prisma.menuItem.update({
+          where: { id },
+          data,
+        })
+      }
+    )
+  }
+
+  // Delete menu item (SYNCED)
+  static async deleteMenuItem(id: string) {
+    return this.syncWrite(
+      'delete',
+      // Firebase write
+      async () => {
+        const menuRef = collection(firestore, 'menuItems')
+        const q = query(menuRef, where('id', '==', id))
+        const snapshot = await getDocs(q)
+        
+        if (!snapshot.empty) {
+          await deleteDoc(doc(firestore, 'menuItems', snapshot.docs[0].id))
+        }
+        
+        return { success: true }
+      },
+      // Prisma sync write
+      async () => {
+        await prisma.menuItem.delete({ where: { id } })
+        return { success: true }
+      }
+    )
+  }
+
+  // Get all reviews for a vendor
+  static async getReviewsByVendor(vendorId: string) {
+    return this.executeQuery(
+      // Firebase (PRIMARY)
+      async () => {
+        const reviewsRef = collection(firestore, 'reviews')
+        const q = query(
+          reviewsRef,
+          where('vendorId', '==', vendorId),
+          orderBy('createdAt', 'desc')
+        )
+        const snapshot = await getDocs(q)
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+      },
+      // Prisma fallback
+      async () => {
+        return await prisma.review.findMany({
+          where: { vendorId },
+          include: {
+            student: {
+              select: {
+                fullName: true,
+              },
+            },
+          },
+          orderBy: { createdAt: 'desc' },
+        })
+      }
+    )
+  }
+
+  // Create review (SYNCED)
+  static async createReview(data: any) {
+    return this.syncWrite(
+      'create',
+      // Firebase write
+      async () => {
+        const reviewsRef = collection(firestore, 'reviews')
+        const docRef = await addDoc(reviewsRef, {
+          ...data,
+          createdAt: new Date(),
+        })
+        return { id: docRef.id, ...data }
+      },
+      // Prisma sync write
+      async () => {
+        return await prisma.review.create({ data })
+      }
+    )
+  }
+
+  // Update vendor rating (SYNCED)
+  static async updateVendorRating(vendorId: string, avgRating: number, totalReviews: number) {
+    return this.syncWrite(
+      'update',
+      // Firebase write
+      async () => {
+        const vendorsRef = collection(firestore, 'vendors')
+        const q = query(vendorsRef, where('id', '==', vendorId))
+        const snapshot = await getDocs(q)
+        
+        if (!snapshot.empty) {
+          const vendorRef = doc(firestore, 'vendors', snapshot.docs[0].id)
+          await updateDoc(vendorRef, {
+            averageRating: avgRating,
+            totalReviews: totalReviews,
+            updatedAt: new Date(),
+          })
+        }
+        
+        return { id: vendorId, averageRating: avgRating, totalReviews }
+      },
+      // Prisma sync write
+      async () => {
+        return await prisma.vendor.update({
+          where: { id: vendorId },
+          data: {
+            averageRating: avgRating,
+            totalReviews: totalReviews,
+          },
+        })
+      }
+    )
+  }
+
+  // Update order pickup (SYNCED)
+  static async confirmOrderPickup(orderId: string, pickupData: any) {
+    return this.syncWrite(
+      'update',
+      // Firebase write
+      async () => {
+        const ordersRef = collection(firestore, 'orders')
+        const q = query(ordersRef, where('id', '==', orderId))
+        const snapshot = await getDocs(q)
+        
+        if (snapshot.empty) throw new Error('Order not found')
+        
+        const orderRef = doc(firestore, 'orders', snapshot.docs[0].id)
+        await updateDoc(orderRef, {
+          ...pickupData,
+          pickedUpAt: new Date(),
+          updatedAt: new Date(),
+        })
+        
+        return { id: orderId, ...pickupData }
+      },
+      // Prisma sync write
+      async () => {
+        return await prisma.order.update({
+          where: { id: orderId },
+          data: {
+            ...pickupData,
+            pickedUpAt: new Date(),
+          },
+        })
+      }
+    )
+  }
+
+  // Create transaction (SYNCED)
+  static async createTransaction(data: any) {
+    return this.syncWrite(
+      'create',
+      // Firebase write
+      async () => {
+        const txRef = collection(firestore, 'transactions')
+        const docRef = await addDoc(txRef, {
+          ...data,
+          createdAt: new Date(),
+        })
+        return { id: docRef.id, ...data }
+      },
+      // Prisma sync write
+      async () => {
+        return await prisma.transaction.create({ data })
       }
     )
   }

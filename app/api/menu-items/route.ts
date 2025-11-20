@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
+import { DatabaseService } from '@/lib/db-service'
 
 export async function POST(request: Request) {
   try {
@@ -13,17 +13,15 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { name, description, price, imageUrl, category, preparationTime } = body
 
-    const menuItem = await prisma.menuItem.create({
-      data: {
-        vendorId: session.user.vendorId!,
-        name,
-        description,
-        price: parseFloat(price),
-        imageUrl: imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300',
-        category,
-        preparationTime: parseInt(preparationTime),
-        isAvailable: true,
-      },
+    const menuItem = await DatabaseService.createMenuItem({
+      vendorId: session.user.vendorId!,
+      name,
+      description,
+      price: parseFloat(price),
+      imageUrl: imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300',
+      category,
+      preparationTime: parseInt(preparationTime),
+      isAvailable: true,
     })
 
     return NextResponse.json(menuItem)
@@ -43,17 +41,14 @@ export async function PUT(request: Request) {
     const body = await request.json()
     const { id, name, description, price, imageUrl, category, preparationTime, isAvailable } = body
 
-    const menuItem = await prisma.menuItem.update({
-      where: { id },
-      data: {
-        name,
-        description,
-        price: parseFloat(price),
-        imageUrl,
-        category,
-        preparationTime: parseInt(preparationTime),
-        isAvailable,
-      },
+    const menuItem = await DatabaseService.updateMenuItem(id, {
+      name,
+      description,
+      price: parseFloat(price),
+      imageUrl,
+      category,
+      preparationTime: parseInt(preparationTime),
+      isAvailable,
     })
 
     return NextResponse.json(menuItem)
@@ -77,9 +72,7 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Item ID required' }, { status: 400 })
     }
 
-    await prisma.menuItem.delete({
-      where: { id },
-    })
+    await DatabaseService.deleteMenuItem(id)
 
     return NextResponse.json({ success: true })
   } catch (error) {

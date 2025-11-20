@@ -1,24 +1,15 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { DatabaseService } from '@/lib/db-service'
 
 export async function GET(
   request: Request,
   { params }: { params: { vendorId: string } }
 ) {
   try {
-    const menuItems = await prisma.menuItem.findMany({
-      where: {
-        vendorId: params.vendorId,
-        isAvailable: true,
-      },
-      orderBy: {
-        category: 'asc',
-      },
-    })
-
-    return NextResponse.json(menuItems)
+    const menuItems = await DatabaseService.getMenuItems(params.vendorId)
+    return NextResponse.json(menuItems || [])
   } catch (error) {
     console.error('Error fetching menu:', error)
-    return NextResponse.json({ error: 'Failed to fetch menu' }, { status: 500 })
+    return NextResponse.json([], { status: 200 })
   }
 }

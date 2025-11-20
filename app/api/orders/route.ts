@@ -20,7 +20,7 @@ export async function POST(request: Request) {
 
     // For RFID payment, check balance but DON'T deduct yet
     if (paymentMethod === 'RFID') {
-      const user = await DatabaseService.getUserWithVendor(session.user.id)
+      const user: any = await DatabaseService.getUserWithVendor(session.user.id)
 
       if (!user || user.rfidBalance === null || user.rfidBalance < totalAmount) {
         return NextResponse.json({ error: 'Insufficient RFID balance' }, { status: 400 })

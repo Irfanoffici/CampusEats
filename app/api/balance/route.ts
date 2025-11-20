@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
+import { DatabaseService } from '@/lib/db-service'
 
 // Mark as dynamic route
 export const dynamic = 'force-dynamic'
@@ -13,14 +13,10 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { rfidBalance: true, rfidNumber: true },
-    })
-
-    return NextResponse.json(user)
+    const user = await DatabaseService.getUserBalance(session.user.id)
+    return NextResponse.json(user || { rfidBalance: 0, rfidNumber: null })
   } catch (error) {
     console.error('Error fetching balance:', error)
-    return NextResponse.json({ error: 'Failed to fetch balance' }, { status: 500 })
+    return NextResponse.json({ rfidBalance: 0, rfidNumber: null }, { status: 200 })
   }
 }

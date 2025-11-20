@@ -120,8 +120,14 @@ export default function AdminDashboard() {
       setLoading(true)
       
       // Use API Tunnel for reliable communication
+      console.log('[Admin Dashboard] Fetching orders...')
       const ordersResponse = await APITunnel.getOrders()
+      console.log('[Admin Dashboard] Orders response:', ordersResponse)
+      
       const ordersData = ordersResponse.success ? ordersResponse.data : []
+      console.log('[Admin Dashboard] Orders data:', ordersData)
+      console.log('[Admin Dashboard] Orders count:', ordersData.length)
+      
       setOrders(Array.isArray(ordersData) ? ordersData : [])
 
       // Get actual counts from database
@@ -141,8 +147,10 @@ export default function AdminDashboard() {
         totalVendors: vendorCount,
         activeOrders: ordersData.filter((o: Order) => !['PICKED_UP', 'CANCELLED'].includes(o.orderStatus)).length,
       })
+      
+      console.log('[Admin Dashboard] Orders state set successfully')
     } catch (error) {
-      console.error('Error fetching stats:', error)
+      console.error('[Admin Dashboard] Error fetching stats:', error)
       NotificationService.error('Failed to load statistics')
       setOrders([])
     } finally {
@@ -668,7 +676,7 @@ export default function AdminDashboard() {
                         </p>
                         <p className="text-xs text-textSecondary mt-1 flex items-center gap-1">
                           <Clock size={12} />
-                          {formatDate(new Date(order.createdAt))}
+                          {formatDate(order.createdAt)}
                         </p>
                       </div>
 
