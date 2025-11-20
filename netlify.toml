@@ -1,5 +1,5 @@
 [build]
-  command = "npm run build && npm run db:seed && npm run db:health"
+  command = "npm run build && npm run db:seed && npm run db:migrate-firebase && npm run db:health"
   publish = ".next"
 
 [[plugins]]
