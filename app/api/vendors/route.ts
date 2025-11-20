@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server'
 import { DatabaseService } from '@/lib/db-service'
 
+// Mark as dynamic to prevent static rendering issues
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   try {
     const vendors = await DatabaseService.getVendors()
