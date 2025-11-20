@@ -8,3 +8,4 @@
 [build.environment]
   NODE_VERSION = "18"
   DATABASE_URL = "file:./dev.db"
+  NEXTAUTH_URL = "https://***REMOVED***.netlify.app"
