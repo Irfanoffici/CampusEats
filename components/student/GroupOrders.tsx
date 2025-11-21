@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Users, Plus, Share2, Clock, CheckCircle, Copy, ExternalLink, AlertCircle, RefreshCw, Search, Filter } from 'lucide-react'
+import { Users, Plus, Share2, Clock, CheckCircle, Copy, ExternalLink, AlertCircle, RefreshCw, Search, Filter, UserPlus, Hash, Lock, Globe } from 'lucide-react'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import toast from 'react-hot-toast'
 
@@ -27,12 +27,16 @@ export default function GroupOrders() {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [newGroupOrder, setNewGroupOrder] = useState({
     participantCount: 3,
-    splitType: 'equal'
+    splitType: 'equal',
+    groupName: '',
+    groupCode: '',
+    isPrivate: false
   })
   const [creating, setCreating] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [filter, setFilter] = useState('all') // all, active, finalized
+  const [activeSubTab, setActiveSubTab] = useState<'orders' | 'friends' | 'invites' | 'create'>('orders')
 
   useEffect(() => {
     fetchGroupOrders()
@@ -79,6 +83,11 @@ export default function GroupOrders() {
   }
 
   const createGroupOrder = async () => {
+    if (!newGroupOrder.groupName) {
+      toast.error('Please enter a group name')
+      return
+    }
+    
     if (newGroupOrder.participantCount < 2 || newGroupOrder.participantCount > 20) {
       toast.error('Participants must be between 2 and 20')
       return
@@ -94,7 +103,10 @@ export default function GroupOrders() {
         },
         body: JSON.stringify({
           participantCount: newGroupOrder.participantCount,
-          splitType: newGroupOrder.splitType
+          splitType: newGroupOrder.splitType,
+          groupName: newGroupOrder.groupName,
+          groupCode: newGroupOrder.groupCode,
+          isPrivate: newGroupOrder.isPrivate
         }),
       })
 
@@ -104,9 +116,13 @@ export default function GroupOrders() {
         setShowCreateModal(false)
         setNewGroupOrder({
           participantCount: 3,
-          splitType: 'equal'
+          splitType: 'equal',
+          groupName: '',
+          groupCode: '',
+          isPrivate: false
         })
         toast.success('Group order created successfully!')
+        setActiveSubTab('orders')
       } else {
         const errorData = await response.json()
         throw new Error(errorData.message || 'Failed to create group order')
@@ -126,10 +142,12 @@ export default function GroupOrders() {
   }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target
+    const { name, value, type } = e.target as HTMLInputElement | HTMLSelectElement
+    const checked = type === 'checkbox' ? (e.target as HTMLInputElement).checked : undefined
+    
     setNewGroupOrder(prev => ({
       ...prev,
-      [name]: name === 'participantCount' ? parseInt(value) : value
+      [name]: type === 'checkbox' ? checked : name === 'participantCount' ? parseInt(value) : value
     }))
   }
 
@@ -141,6 +159,207 @@ export default function GroupOrders() {
                          (filter === 'finalized' && order.isFinalized)
     return matchesSearch && matchesFilter
   })
+
+  // Friends component
+  const FriendsComponent = () => (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h2 className="text-2xl font-bold text-textPrimary">Friends</h2>
+        <div className="flex flex-wrap gap-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+            <input
+              type="text"
+              placeholder="Search friends..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+            />
+          </div>
+          <button className="bg-primary text-white px-4 py-2 rounded-lg font-semibold flex items-center gap-2 hover:opacity-90 transition-opacity">
+            <UserPlus size={20} />
+            <span>Invite Friends</span>
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {[1, 2, 3, 4, 5, 6].map((friend) => (
+          <div key={friend} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-red-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                F{friend}
+              </div>
+              <div>
+                <h3 className="font-bold text-lg">Friend {friend}</h3>
+                <p className="text-sm text-gray-600">Online</p>
+              </div>
+            </div>
+            <div className="mt-4 flex gap-2">
+              <button className="flex-1 bg-primary text-white py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity">Message</button>
+              <button className="flex-1 bg-gray-100 text-gray-800 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">View Profile</button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+
+  // Invites component
+  const InvitesComponent = () => (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-textPrimary">Group Invites</h2>
+        <div className="flex gap-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+            <input
+              type="text"
+              placeholder="Search invites..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {[1, 2, 3].map((invite) => (
+          <div key={invite} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div className="flex justify-between items-start">
+              <div>
+                <h3 className="font-bold text-lg">Group Order #{invite}</h3>
+                <p className="text-gray-600">Vendor Name</p>
+                <div className="flex items-center gap-2 mt-2">
+                  <Users className="text-gray-500" size={16} />
+                  <span className="text-sm">5 participants</span>
+                </div>
+              </div>
+              <span className="bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded-full">Pending</span>
+            </div>
+            <div className="mt-4 flex gap-2">
+              <button className="flex-1 bg-green-500 text-white py-2 rounded-lg font-medium hover:opacity-90 transition-opacity">Accept</button>
+              <button className="flex-1 bg-gray-200 text-gray-800 py-2 rounded-lg font-medium hover:bg-gray-300 transition-colors">Decline</button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+
+  // Create group component
+  const CreateGroupComponent = () => (
+    <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-sm border border-gray-100 p-8">
+      <h2 className="text-2xl font-bold text-textPrimary mb-6">Create New Group</h2>
+      
+      <div className="space-y-6">
+        <div>
+          <label className="block text-sm font-medium text-textSecondary mb-2">
+            Group Name *
+          </label>
+          <input
+            type="text"
+            name="groupName"
+            value={newGroupOrder.groupName}
+            onChange={handleInputChange}
+            placeholder="Enter group name"
+            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition"
+          />
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-textSecondary mb-2">
+            Number of Participants
+          </label>
+          <input
+            type="number"
+            name="participantCount"
+            min="2"
+            max="20"
+            value={newGroupOrder.participantCount}
+            onChange={handleInputChange}
+            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition"
+          />
+          <p className="text-xs text-gray-500 mt-1">Minimum 2, maximum 20 participants</p>
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-textSecondary mb-2">
+            Split Type
+          </label>
+          <select 
+            name="splitType"
+            value={newGroupOrder.splitType}
+            onChange={handleInputChange}
+            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition"
+          >
+            <option value="equal">Equal Split</option>
+            <option value="custom">Custom Split</option>
+          </select>
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-textSecondary mb-2">
+            Group Code (Optional)
+          </label>
+          <div className="relative">
+            <Hash className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+            <input
+              type="text"
+              name="groupCode"
+              value={newGroupOrder.groupCode}
+              onChange={handleInputChange}
+              placeholder="Enter group code"
+              className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition"
+            />
+          </div>
+          <p className="text-xs text-gray-500 mt-1">Create a unique code for others to join</p>
+        </div>
+        
+        <div className="flex items-center">
+          <input
+            type="checkbox"
+            name="isPrivate"
+            checked={newGroupOrder.isPrivate}
+            onChange={handleInputChange}
+            className="h-5 w-5 text-primary focus:ring-primary border-gray-300 rounded"
+          />
+          <label className="ml-2 block text-sm text-gray-700">
+            Make this group private
+          </label>
+          {newGroupOrder.isPrivate ? (
+            <Lock className="ml-2 text-gray-500" size={16} />
+          ) : (
+            <Globe className="ml-2 text-gray-500" size={16} />
+          )}
+        </div>
+        
+        <div className="flex gap-3 pt-4">
+          <button
+            onClick={() => setActiveSubTab('orders')}
+            className="flex-1 bg-gray-200 hover:bg-gray-300 text-textPrimary py-3 rounded-lg font-semibold transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={createGroupOrder}
+            disabled={creating}
+            className="flex-1 bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-white py-3 rounded-lg font-semibold transition flex items-center justify-center gap-2 disabled:opacity-50"
+          >
+            {creating ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                Creating...
+              </>
+            ) : (
+              'Create Group'
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
 
   if (loading) {
     return (
@@ -175,137 +394,194 @@ export default function GroupOrders() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h2 className="text-2xl font-bold text-textPrimary">Group Orders</h2>
-        <div className="flex flex-wrap gap-2">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-            <input
-              type="text"
-              placeholder="Search vendors..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-            />
-          </div>
-          <div className="relative">
-            <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-            <select
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              className="pl-10 pr-8 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none appearance-none bg-white"
-            >
-              <option value="all">All Orders</option>
-              <option value="active">Active</option>
-              <option value="finalized">Finalized</option>
-            </select>
-          </div>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={refreshGroupOrders}
-            disabled={refreshing}
-            className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center justify-center disabled:opacity-50"
-            title="Refresh"
-          >
-            <RefreshCw size={20} className={refreshing ? 'animate-spin' : ''} />
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setShowCreateModal(true)}
-            className="bg-primary text-white px-4 py-2 rounded-lg font-semibold flex items-center gap-2"
-          >
-            <Plus size={20} />
-            <span className="hidden sm:inline">Create Group Order</span>
-            <span className="sm:hidden">Create</span>
-          </motion.button>
-        </div>
+      {/* Sub-tabs for community features */}
+      <div className="flex flex-wrap gap-2 border-b border-gray-200 pb-2">
+        <button
+          onClick={() => setActiveSubTab('orders')}
+          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            activeSubTab === 'orders'
+              ? 'bg-primary text-white'
+              : 'text-gray-600 hover:bg-gray-100'
+          }`}
+        >
+          <Users className="inline mr-2" size={18} />
+          Group Orders
+        </button>
+        <button
+          onClick={() => setActiveSubTab('friends')}
+          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            activeSubTab === 'friends'
+              ? 'bg-primary text-white'
+              : 'text-gray-600 hover:bg-gray-100'
+          }`}
+        >
+          <UserPlus className="inline mr-2" size={18} />
+          Friends
+        </button>
+        <button
+          onClick={() => setActiveSubTab('invites')}
+          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            activeSubTab === 'invites'
+              ? 'bg-primary text-white'
+              : 'text-gray-600 hover:bg-gray-100'
+          }`}
+        >
+          <Share2 className="inline mr-2" size={18} />
+          Invites
+        </button>
+        <button
+          onClick={() => setActiveSubTab('create')}
+          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            activeSubTab === 'create'
+              ? 'bg-primary text-white'
+              : 'text-gray-600 hover:bg-gray-100'
+          }`}
+        >
+          <Plus className="inline mr-2" size={18} />
+          Create Group
+        </button>
       </div>
 
-      {filteredGroupOrders.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-xl shadow-sm border border-gray-100">
-          <Users size={64} className="mx-auto text-gray-300 mb-4" />
-          <p className="text-textSecondary mb-4">
-            {searchTerm || filter !== 'all' 
-              ? 'No group orders match your search/filter criteria' 
-              : 'No group orders yet'}
-          </p>
-          <button 
-            onClick={() => setShowCreateModal(true)}
-            className="bg-primary text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary/90 transition"
-          >
-            Create Your First Group Order
-          </button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredGroupOrders.map((groupOrder) => (
-            <motion.div
-              key={groupOrder.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-all duration-200"
-            >
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h3 className="font-bold text-lg text-textPrimary">{groupOrder.vendor.shopName}</h3>
-                  <p className="text-sm text-textSecondary">Group Order</p>
-                </div>
-                {groupOrder.isFinalized ? (
-                  <CheckCircle size={24} className="text-green-500" />
-                ) : (
-                  <Clock size={24} className="text-yellow-500" />
-                )}
+      {/* Content based on active sub-tab */}
+      {activeSubTab === 'orders' && (
+        <>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <h2 className="text-2xl font-bold text-textPrimary">Group Orders</h2>
+            <div className="flex flex-wrap gap-2">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                <input
+                  type="text"
+                  placeholder="Search vendors..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition"
+                />
               </div>
+              <div className="relative">
+                <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                <select
+                  value={filter}
+                  onChange={(e) => setFilter(e.target.value)}
+                  className="pl-10 pr-8 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none appearance-none bg-white transition"
+                >
+                  <option value="all">All Orders</option>
+                  <option value="active">Active</option>
+                  <option value="finalized">Finalized</option>
+                </select>
+              </div>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={refreshGroupOrders}
+                disabled={refreshing}
+                className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center justify-center disabled:opacity-50 transition-colors"
+                title="Refresh"
+              >
+                <RefreshCw size={20} className={refreshing ? 'animate-spin' : ''} />
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setActiveSubTab('create')}
+                className="bg-primary text-white px-4 py-2 rounded-lg font-semibold flex items-center gap-2 hover:opacity-90 transition"
+              >
+                <Plus size={20} />
+                <span className="hidden sm:inline">Create Group Order</span>
+                <span className="sm:hidden">Create</span>
+              </motion.button>
+            </div>
+          </div>
 
-              <div className="space-y-3 mb-4">
-                <div className="flex justify-between">
-                  <span className="text-textSecondary">Total</span>
-                  <span className="font-bold text-primary">{formatCurrency(groupOrder.totalAmount)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-textSecondary">Participants</span>
-                  <span className="font-semibold">{groupOrder.participantCount}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-textSecondary">Split Type</span>
-                  <span className="font-semibold capitalize">{groupOrder.splitType}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-textSecondary">Created</span>
-                  <span className="text-sm">{formatDate(new Date(groupOrder.createdAt))}</span>
-                </div>
-                {!groupOrder.isFinalized && (
-                  <div className="flex justify-between">
-                    <span className="text-textSecondary">Expires</span>
-                    <span className="text-sm">{formatDate(new Date(groupOrder.expiresAt))}</span>
+          {filteredGroupOrders.length === 0 ? (
+            <div className="text-center py-12 bg-white rounded-xl shadow-sm border border-gray-100">
+              <Users size={64} className="mx-auto text-gray-300 mb-4" />
+              <p className="text-textSecondary mb-4">
+                {searchTerm || filter !== 'all' 
+                  ? 'No group orders match your search/filter criteria' 
+                  : 'No group orders yet'}
+              </p>
+              <button 
+                onClick={() => setActiveSubTab('create')}
+                className="bg-primary text-white px-6 py-3 rounded-lg font-semibold hover:opacity-90 transition"
+              >
+                Create Your First Group Order
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredGroupOrders.map((groupOrder) => (
+                <motion.div
+                  key={groupOrder.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-all duration-200"
+                >
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h3 className="font-bold text-lg text-textPrimary">{groupOrder.vendor.shopName}</h3>
+                      <p className="text-sm text-textSecondary">Group Order</p>
+                    </div>
+                    {groupOrder.isFinalized ? (
+                      <CheckCircle size={24} className="text-green-500" />
+                    ) : (
+                      <Clock size={24} className="text-yellow-500" />
+                    )}
                   </div>
-                )}
-              </div>
 
-              <div className="flex gap-2">
-                <button 
-                  onClick={() => window.open(`/group-order/${groupOrder.id}`, '_blank')}
-                  className="flex-1 bg-primary text-white py-2 px-4 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 hover:opacity-90 transition"
-                >
-                  <ExternalLink size={16} />
-                  <span>View Details</span>
-                </button>
-                <button 
-                  onClick={() => copyShareLink(groupOrder.shareLink)}
-                  className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center justify-center transition"
-                  title="Copy share link"
-                >
-                  <Copy size={18} />
-                </button>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+                  <div className="space-y-3 mb-4">
+                    <div className="flex justify-between">
+                      <span className="text-textSecondary">Total</span>
+                      <span className="font-bold text-primary">{formatCurrency(groupOrder.totalAmount)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-textSecondary">Participants</span>
+                      <span className="font-semibold">{groupOrder.participantCount}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-textSecondary">Split Type</span>
+                      <span className="font-semibold capitalize">{groupOrder.splitType}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-textSecondary">Created</span>
+                      <span className="text-sm">{formatDate(new Date(groupOrder.createdAt))}</span>
+                    </div>
+                    {!groupOrder.isFinalized && (
+                      <div className="flex justify-between">
+                        <span className="text-textSecondary">Expires</span>
+                        <span className="text-sm">{formatDate(new Date(groupOrder.expiresAt))}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => window.open(`/group-order/${groupOrder.id}`, '_blank')}
+                      className="flex-1 bg-primary text-white py-2 px-4 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 hover:opacity-90 transition"
+                    >
+                      <ExternalLink size={16} />
+                      <span>View Details</span>
+                    </button>
+                    <button 
+                      onClick={() => copyShareLink(groupOrder.shareLink)}
+                      className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center justify-center transition-colors"
+                      title="Copy share link"
+                    >
+                      <Copy size={18} />
+                    </button>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </>
       )}
 
-      {/* Create Group Order Modal */}
+      {activeSubTab === 'friends' && <FriendsComponent />}
+      {activeSubTab === 'invites' && <InvitesComponent />}
+      {activeSubTab === 'create' && <CreateGroupComponent />}
+
+      {/* Create Group Order Modal (deprecated but kept for backward compatibility) */}
       <AnimatePresence>
         {showCreateModal && (
           <motion.div
@@ -345,7 +621,7 @@ export default function GroupOrders() {
                     max="20"
                     value={newGroupOrder.participantCount}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition"
                   />
                   <p className="text-xs text-gray-500 mt-1">Minimum 2, maximum 20 participants</p>
                 </div>
@@ -358,7 +634,7 @@ export default function GroupOrders() {
                     name="splitType"
                     value={newGroupOrder.splitType}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition"
                   >
                     <option value="equal">Equal Split</option>
                     <option value="custom">Custom Split</option>
@@ -369,7 +645,7 @@ export default function GroupOrders() {
               <div className="flex gap-3 mt-6">
                 <button
                   onClick={() => setShowCreateModal(false)}
-                  className="flex-1 bg-gray-200 hover:bg-gray-300 text-textPrimary py-3 rounded-lg font-semibold transition"
+                  className="flex-1 bg-gray-200 hover:bg-gray-300 text-textPrimary py-3 rounded-lg font-semibold transition-colors"
                   disabled={creating}
                 >
                   Cancel

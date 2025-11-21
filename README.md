@@ -22,6 +22,8 @@ A full-stack web application built with Next.js, featuring three separate portal
 - **Order Tracking** - Real-time status updates
 - **RFID Balance Management** - View and top up balance
 - **Order History** - Track past orders
+- **Community Features** - Friends, invites, messaging with end-to-end encryption
+- **Secure Messaging** - Encrypted direct messages using Firebase with NaCl encryption
 
 ### 🏪 Vendor Portal
 - **Order Management** - View incoming orders with customer details
@@ -33,6 +35,8 @@ A full-stack web application built with Next.js, featuring three separate portal
   - Category organization
 - **Pickup Code Verification** - Secure order collection
 - **RFID Deduction Trigger** - Deduct payment on food collection
+- **Vendor Community** - Communicate with other vendors
+- **Analytics Dashboard** - Sales, revenue, and performance metrics
 
 ### 🔑 Admin Dashboard
 - **Analytics Cards**:
@@ -45,6 +49,8 @@ A full-stack web application built with Next.js, featuring three separate portal
 - **User Management** - Manage students, vendors, admins
 - **RFID Management** - Credit RFID balances for students
 - **System Overview** - Complete platform statistics
+- **Community Monitoring** - Monitor messages and reports
+- **Real-time Analytics** - Detailed vendor and user analytics
 
 ### 💎 Additional Features
 - **Beautiful UI** - Swiggy-style design with smooth animations
@@ -57,6 +63,8 @@ A full-stack web application built with Next.js, featuring three separate portal
 - **Comprehensive Testing** - 10 automated system tests
 - **Dual Signup System** - Separate registration for MEC and non-MEC students
 - **RFID Integration** - Special access for MEC students with campus RFID cards
+- **End-to-End Encryption** - Secure messaging with NaCl cryptography
+- **Real-time Messaging** - Instant communication with Firebase
 
 ---
 
@@ -95,7 +103,7 @@ DATABASE_URL="file:./dev.db"
 NEXTAUTH_SECRET="your-secret-key-here"
 NEXTAUTH_URL="http://localhost:3000"
 
-# Firebase (Optional - for fallback)
+# Firebase (Optional - for fallback and messaging)
 NEXT_PUBLIC_FIREBASE_API_KEY="your-api-key"
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN="your-project.firebaseapp.com"
 NEXT_PUBLIC_FIREBASE_PROJECT_ID="your-project-id"
@@ -211,7 +219,7 @@ npm test             # Run system tests (10 automated tests)
 - **Next.js API Routes** - RESTful API
 - **Prisma ORM** - Database toolkit
 - **SQLite** - Primary database
-- **Firebase** - Fallback database (optional)
+- **Firebase** - Fallback database and messaging (optional)
 - **NextAuth.js** - Authentication
 
 ### Additional Libraries
@@ -220,6 +228,7 @@ npm test             # Run system tests (10 automated tests)
 - **jsPDF** - PDF invoice generation
 - **Recharts** - Analytics charts
 - **Zustand** - State management
+- **tweetnacl** - Cryptography for end-to-end encryption
 
 ---
 
@@ -239,6 +248,21 @@ npm test             # Run system tests (10 automated tests)
 - Vendor → MenuItems (1:N)
 - User → Orders (1:N)
 - Order → Reviews (1:N)
+
+---
+
+## 🔐 Security Features
+
+### End-to-End Encryption
+- **Messaging Security** - All direct messages encrypted with NaCl (Networking and Cryptographic Library)
+- **Key Management** - Each user generates unique public/private key pairs
+- **Secure Storage** - Encrypted messages stored in Firebase Firestore
+- **Real-time Decryption** - Messages decrypted on receipt using recipient's private key
+
+### Authentication
+- **Role-based Access** - Separate portals for Students, Vendors, and Admins
+- **Secure Sessions** - NextAuth.js with JWT tokens
+- **Password Protection** - bcryptjs for secure password hashing
 
 ---
 
