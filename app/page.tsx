@@ -68,11 +68,11 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-white overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 overflow-hidden">
       {/* Sticky Header */}
       <motion.nav 
         style={{ y: headerY, opacity: headerOpacity }}
-        className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm"
+        className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100 shadow-sm"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
@@ -112,9 +112,9 @@ export default function HomePage() {
       <section className="relative pt-32 pb-20 px-4 sm:px-6 lg:px-8 overflow-hidden">
         {/* Animated Background */}
         <div className="absolute inset-0 -z-10">
-          <div className="absolute top-20 -left-20 w-96 h-96 bg-orange-100 rounded-full blur-3xl opacity-30 animate-pulse" />
-          <div className="absolute bottom-20 -right-20 w-96 h-96 bg-red-100 rounded-full blur-3xl opacity-30 animate-pulse" style={{ animationDelay: '1s' }} />
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full h-full bg-gradient-to-br from-orange-50 to-red-50 opacity-30" />
+          <div className="absolute top-20 -left-20 w-96 h-96 bg-orange-100 rounded-full blur-3xl opacity-20 animate-pulse" />
+          <div className="absolute bottom-20 -right-20 w-96 h-96 bg-red-100 rounded-full blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '1s' }} />
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full h-full bg-gradient-to-br from-orange-50 to-red-50 opacity-20" />
         </div>
 
         <div className="max-w-7xl mx-auto">
@@ -161,9 +161,10 @@ export default function HomePage() {
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
+                  onClick={() => handleNavigation('/signup')}
                   className="px-8 py-4 bg-white border-2 border-gray-200 text-gray-900 font-bold rounded-xl hover:border-orange-500 transition-all duration-200"
                 >
-                  Learn More
+                  Sign Up
                 </motion.button>
               </div>
 
@@ -179,6 +180,7 @@ export default function HomePage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2 + idx * 0.1, duration: 0.3 }}
+                    className="text-center"
                   >
                     <div className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">{stat.value}</div>
                     <div className="text-sm text-gray-600 mt-1">{stat.label}</div>
@@ -209,7 +211,7 @@ export default function HomePage() {
                     y: { duration: 2 + idx * 0.5, repeat: Infinity, ease: 'easeInOut' },
                     rotate: { duration: 3 + idx * 0.5, repeat: Infinity, ease: 'easeInOut' }
                   }}
-                  className="absolute rounded-2xl shadow-2xl overflow-hidden"
+                  className="absolute rounded-2xl shadow-2xl overflow-hidden border-4 border-white"
                   style={{
                     width: idx === 0 ? '300px' : '280px',
                     height: idx === 0 ? '400px' : '350px',
@@ -246,7 +248,12 @@ export default function HomePage() {
       {/* Features Carousel */}
       <section className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-4 gap-6">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Why Choose CampusEats?</h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">Experience the fastest and most convenient food ordering service on campus</p>
+          </div>
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {features.map((feature, idx) => (
               <motion.div
                 key={idx}
@@ -254,21 +261,20 @@ export default function HomePage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-100px" }}
                 transition={{ delay: idx * 0.1, duration: 0.3 }}
-                className={`p-6 rounded-2xl border-2 transition-all duration-300 ${
+                whileHover={{ y: -8 }}
+                className={`p-6 rounded-2xl border transition-all duration-300 bg-white shadow-sm hover:shadow-md ${
                   activeFeature === idx 
-                    ? 'bg-gradient-to-br from-orange-500 to-red-500 border-transparent text-white shadow-2xl scale-105' 
-                    : 'bg-white border-gray-200 hover:border-orange-200'
+                    ? 'border-orange-300 ring-2 ring-orange-100' 
+                    : 'border-gray-200'
                 }`}
               >
                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${
-                  activeFeature === idx ? 'bg-white/20' : 'bg-orange-50'
+                  activeFeature === idx ? 'bg-orange-100 text-orange-600' : 'bg-gray-100 text-gray-600'
                 }`}>
-                  <div className={activeFeature === idx ? 'text-white' : 'text-orange-600'}>
-                    {feature.icon}
-                  </div>
+                  {feature.icon}
                 </div>
                 <h3 className="text-lg font-bold mb-2">{feature.title}</h3>
-                <p className={`text-sm ${activeFeature === idx ? 'text-white/90' : 'text-gray-600'}`}>
+                <p className="text-gray-600 text-sm">
                   {feature.desc}
                 </p>
               </motion.div>
@@ -301,9 +307,9 @@ export default function HomePage() {
                 transition={{ delay: idx * 0.1, duration: 0.3 }}
                 whileHover={{ y: -8, scale: 1.02 }}
                 onClick={() => handleNavigation(portal.path)}
-                className={`bg-white rounded-3xl shadow-xl overflow-hidden cursor-pointer group border-2 border-transparent hover:border-orange-200 transition-all duration-300 ${portal.shadow}`}
+                className={`bg-white rounded-2xl shadow-lg overflow-hidden cursor-pointer group border transition-all duration-300 ${portal.shadow} hover:shadow-xl`}
               >
-                <div className={`bg-gradient-to-br ${portal.gradient} p-10 transition-all duration-300`}>
+                <div className={`bg-gradient-to-br ${portal.gradient} p-8 transition-all duration-300`}>
                   <div className="text-white transform group-hover:scale-110 transition-transform duration-300">
                     {portal.icon}
                   </div>
@@ -337,7 +343,7 @@ export default function HomePage() {
           >
             <h2 className="text-4xl lg:text-5xl font-bold mb-6">Ready to Order?</h2>
             <p className="text-xl mb-8 text-white/90">Join thousands of students enjoying delicious food every day</p>
-            <div className="flex flex-wrap gap-4 justify-center">
+            <div className="flex flex-wrap gap-4 justify-center mb-8">
               {['No Delivery Charges', 'Fast Pickup', 'RFID Payments'].map((item, idx) => (
                 <div key={idx} className="flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full">
                   <CheckCircle size={18} />
@@ -348,11 +354,11 @@ export default function HomePage() {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => handleNavigation('/login')}
+              onClick={() => handleNavigation('/signup')}
               disabled={isLoading}
-              className="mt-8 px-10 py-4 bg-white text-orange-600 font-bold rounded-xl text-lg shadow-2xl hover:shadow-white/50 transition-all duration-200 disabled:opacity-50"
+              className="mt-4 px-10 py-4 bg-white text-orange-600 font-bold rounded-xl text-lg shadow-2xl hover:shadow-white/50 transition-all duration-200 disabled:opacity-50"
             >
-              {isLoading ? 'Loading...' : 'Start Ordering Now'}
+              {isLoading ? 'Loading...' : 'Get Started Now'}
             </motion.button>
           </motion.div>
         </div>

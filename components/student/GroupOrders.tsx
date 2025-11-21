@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Users, Plus, Share2, Clock, CheckCircle, Copy, ExternalLink, AlertCircle, RefreshCw } from 'lucide-react'
+import { Users, Plus, Share2, Clock, CheckCircle, Copy, ExternalLink, AlertCircle, RefreshCw, Search, Filter } from 'lucide-react'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import toast from 'react-hot-toast'
 
@@ -31,6 +31,8 @@ export default function GroupOrders() {
   })
   const [creating, setCreating] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [filter, setFilter] = useState('all') // all, active, finalized
 
   useEffect(() => {
     fetchGroupOrders()
@@ -131,6 +133,15 @@ export default function GroupOrders() {
     }))
   }
 
+  // Filter and search group orders
+  const filteredGroupOrders = groupOrders.filter(order => {
+    const matchesSearch = order.vendor.shopName.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesFilter = filter === 'all' || 
+                         (filter === 'active' && !order.isFinalized) || 
+                         (filter === 'finalized' && order.isFinalized)
+    return matchesSearch && matchesFilter
+  })
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -164,9 +175,31 @@ export default function GroupOrders() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h2 className="text-2xl font-bold text-textPrimary">Group Orders</h2>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+            <input
+              type="text"
+              placeholder="Search vendors..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+            />
+          </div>
+          <div className="relative">
+            <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+            <select
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              className="pl-10 pr-8 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none appearance-none bg-white"
+            >
+              <option value="all">All Orders</option>
+              <option value="active">Active</option>
+              <option value="finalized">Finalized</option>
+            </select>
+          </div>
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -190,10 +223,14 @@ export default function GroupOrders() {
         </div>
       </div>
 
-      {groupOrders.length === 0 ? (
-        <div className="text-center py-12">
+      {filteredGroupOrders.length === 0 ? (
+        <div className="text-center py-12 bg-white rounded-xl shadow-sm border border-gray-100">
           <Users size={64} className="mx-auto text-gray-300 mb-4" />
-          <p className="text-textSecondary mb-4">No group orders yet</p>
+          <p className="text-textSecondary mb-4">
+            {searchTerm || filter !== 'all' 
+              ? 'No group orders match your search/filter criteria' 
+              : 'No group orders yet'}
+          </p>
           <button 
             onClick={() => setShowCreateModal(true)}
             className="bg-primary text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary/90 transition"
@@ -203,12 +240,12 @@ export default function GroupOrders() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {groupOrders.map((groupOrder) => (
+          {filteredGroupOrders.map((groupOrder) => (
             <motion.div
               key={groupOrder.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-xl shadow-lg p-6 border border-gray-100"
+              className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-all duration-200"
             >
               <div className="flex justify-between items-start mb-4">
                 <div>
@@ -250,14 +287,14 @@ export default function GroupOrders() {
               <div className="flex gap-2">
                 <button 
                   onClick={() => window.open(`/group-order/${groupOrder.id}`, '_blank')}
-                  className="flex-1 bg-primary text-white py-2 px-4 rounded-lg font-semibold text-sm flex items-center justify-center gap-2"
+                  className="flex-1 bg-primary text-white py-2 px-4 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 hover:opacity-90 transition"
                 >
                   <ExternalLink size={16} />
                   <span>View Details</span>
                 </button>
                 <button 
                   onClick={() => copyShareLink(groupOrder.shareLink)}
-                  className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center justify-center"
+                  className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center justify-center transition"
                   title="Copy share link"
                 >
                   <Copy size={18} />
@@ -285,7 +322,15 @@ export default function GroupOrders() {
               className="bg-white rounded-2xl p-6 max-w-md w-full"
               onClick={(e) => e.stopPropagation()}
             >
-              <h3 className="text-2xl font-bold text-textPrimary mb-4">Create Group Order</h3>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-2xl font-bold text-textPrimary">Create Group Order</h3>
+                <button 
+                  onClick={() => setShowCreateModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ✕
+                </button>
+              </div>
               <p className="text-textSecondary mb-6">Start a new group order with your friends</p>
               
               <div className="space-y-4">
