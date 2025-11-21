@@ -127,7 +127,7 @@ In your Vercel project settings, add the following environment variables:
 ```
 DATABASE_URL=file:./dev.db
 NEXTAUTH_SECRET=your-super-secret-key-here
-NEXTAUTH_URL=https://your-project-name.vercel.app
+NEXTAUTH_URL=https://meccampuseats.vercel.app
 ```
 
 Replace `your-super-secret-key-here` with a strong secret (use `openssl rand -base64 32` to generate one).

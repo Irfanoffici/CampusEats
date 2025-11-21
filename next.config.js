@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: ['campuseatsmec.netlify.app', 'images.unsplash.com'],
+    domains: ['meccampuseats.vercel.app', 'images.unsplash.com'],
   },
 }
 
