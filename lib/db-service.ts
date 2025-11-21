@@ -2464,4 +2464,155 @@ export class DatabaseService {
       }
     )
   }
+  
+  // Get user profile
+  static async getUserProfile(userId: string) {
+    return this.executeQuery(
+      // Firebase (PRIMARY)
+      async () => {
+        console.log(`[DB-Service] Firebase: Fetching user profile for user ${userId}`)
+        if (!isFirebaseAvailable || !firestore) {
+          throw new Error('Firebase not available')
+        }
+        
+        const usersRef = collection(firestore!, 'users')
+        const q = query(usersRef, where('id', '==', userId))
+        const snapshot = await getDocs(q)
+        
+        if (snapshot.empty) {
+          throw new Error('User not found')
+        }
+        
+        const userData = snapshot.docs[0].data()
+        
+        // Get vendor details if user is a vendor
+        if (userData.role === 'VENDOR') {
+          const vendorsRef = collection(firestore!, 'vendors')
+          const vendorQuery = query(vendorsRef, where('userId', '==', userId))
+          const vendorSnapshot = await getDocs(vendorQuery)
+          
+          if (!vendorSnapshot.empty) {
+            userData.vendor = { id: vendorSnapshot.docs[0].id, ...vendorSnapshot.docs[0].data() }
+          }
+        }
+        
+        return { id: snapshot.docs[0].id, ...userData }
+      },
+      // Supabase fallback (SECONDARY)
+      async () => {
+        console.log(`[DB-Service] Supabase: Fetching user profile for user ${userId}`)
+        const cookieStore = cookies()
+        const supabase = createServerComponentClient(cookieStore)
+        
+        // First get the user
+        const { data: user, error: userError } = await supabase
+          .from('users')
+          .select('*, vendor (*)')
+          .eq('id', userId)
+          .single()
+        
+        if (userError) throw userError
+        return user
+      },
+      // Prisma fallback (TERTIARY)
+      async () => {
+        console.log(`[DB-Service] Prisma: Fetching user profile for user ${userId}`)
+        return await prisma.user.findUnique({
+          where: { id: userId },
+          include: { vendor: true }
+        })
+      }
+    )
+  }
+  
+  // Update user profile
+  static async updateUserProfile(userId: string, profileData: any) {
+    return this.syncWrite(
+      'update',
+      // Firebase write (PRIMARY)
+      async () => {
+        console.log(`[DB-Service] Firebase: Updating user profile for user ${userId}`)
+        if (!isFirebaseAvailable || !firestore) {
+          throw new Error('Firebase not available')
+        }
+        
+        const usersRef = collection(firestore!, 'users')
+        const q = query(usersRef, where('id', '==', userId))
+        const snapshot = await getDocs(q)
+        
+        if (snapshot.empty) {
+          throw new Error('User not found')
+        }
+        
+        const userRef = doc(firestore!, 'users', snapshot.docs[0].id)
+        await updateDoc(userRef, {
+          ...profileData,
+          updatedAt: new Date()
+        })
+        
+        return { id: userId, ...profileData }
+      },
+      // Supabase sync write (SECONDARY)
+      async () => {
+        console.log(`[DB-Service] Supabase: Updating user profile for user ${userId}`)
+        const cookieStore = cookies()
+        const supabase = createServerComponentClient(cookieStore)
+        
+        // Check if username is already taken (if username is being updated)
+        if (profileData.username) {
+          const { data: existingUsers, error: fetchError } = await supabase
+            .from('users')
+            .select('id, username')
+            .eq('username', profileData.username)
+          
+          if (fetchError) throw fetchError
+          
+          for (const existingUser of existingUsers || []) {
+            if (existingUser.id !== userId) {
+              throw new Error('Username already taken')
+            }
+          }
+        }
+        
+        const { data, error } = await supabase
+          .from('users')
+          .update({ 
+            ...profileData,
+            updatedAt: new Date()
+          })
+          .eq('id', userId)
+          .select()
+          .single()
+        
+        if (error) throw error
+        return data
+      },
+      // Prisma sync write (TERTIARY)
+      async () => {
+        console.log(`[DB-Service] Prisma: Updating user profile for user ${userId}`)
+        // Check if username is already taken (if username is being updated)
+        if (profileData.username) {
+          const existingUsers = await prisma.user.findMany({
+            where: { username: profileData.username }
+          })
+          
+          for (const existingUser of existingUsers) {
+            if (existingUser.id !== userId) {
+              throw new Error('Username already taken')
+            }
+          }
+        }
+        
+        const updatedUser = await prisma.user.update({
+          where: { id: userId },
+          data: {
+            ...profileData,
+            updatedAt: new Date()
+          }
+        })
+        
+        return updatedUser
+      }
+    )
+  }
 }
