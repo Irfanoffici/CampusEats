@@ -21,7 +21,7 @@ export default function RootLayout({
         <Providers>
           <div className="flex flex-col min-h-screen">
             <Navigation />
-            <main className="flex-grow">{children}</main>
+            <main id="main-content" className="flex-grow relative">{children}</main>
             <Toaster position="top-right" toastOptions={{
               duration: 3000,
               style: {

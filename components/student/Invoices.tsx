@@ -129,10 +129,14 @@ export default function Invoices() {
           {filteredInvoices.map((invoice) => (
             <motion.div
               key={invoice.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-xl shadow-lg p-6 border border-gray-100"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              whileHover={{ y: -3, scale: 1.01 }}
+              whileTap={{ scale: 0.99 }}
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-all duration-300 relative overflow-hidden"
             >
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/5 opacity-0 hover:opacity-100 transition-opacity duration-300 rounded-2xl"></div>
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
@@ -160,27 +164,33 @@ export default function Invoices() {
                   </div>
                   
                   <div className="flex gap-2">
-                    <button 
+                    <motion.button 
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
                       onClick={() => viewInvoiceDetails(invoice)}
-                      className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50"
+                      className="p-3 border-2 border-dashed border-gray-300 rounded-xl hover:border-primary hover:bg-primary/10 flex items-center justify-center transition-all duration-300"
                       title="View details"
                     >
-                      <Eye size={18} />
-                    </button>
-                    <button 
+                      <Eye size={18} className="text-gray-500 hover:text-primary transition-colors" />
+                    </motion.button>
+                    <motion.button 
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
                       onClick={() => downloadInvoice(invoice.id)}
-                      className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50"
+                      className="p-3 border-2 border-dashed border-gray-300 rounded-xl hover:border-green-500 hover:bg-green-500/10 flex items-center justify-center transition-all duration-300"
                       title="Download"
                     >
-                      <Download size={18} />
-                    </button>
-                    <button 
+                      <Download size={18} className="text-gray-500 hover:text-green-500 transition-colors" />
+                    </motion.button>
+                    <motion.button 
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
                       onClick={() => shareInvoice(invoice.id)}
-                      className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50"
+                      className="p-3 border-2 border-dashed border-gray-300 rounded-xl hover:border-purple-500 hover:bg-purple-500/10 flex items-center justify-center transition-all duration-300"
                       title="Share"
                     >
-                      <Share2 size={18} />
-                    </button>
+                      <Share2 size={18} className="text-gray-500 hover:text-purple-500 transition-colors" />
+                    </motion.button>
                   </div>
                 </div>
               </div>

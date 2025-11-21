@@ -1,12 +1,12 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { motion } from 'framer-motion'
-import { Search, Users, MessageCircle, Hash, MoreHorizontal, Send, Paperclip, Smile, Phone, Video, Settings, UserPlus, Bell, Camera, Gift, AtSign, Plus, Home, Utensils } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Search, Users, MessageCircle, Hash, MoreHorizontal, Send, Paperclip, Smile, Phone, Video, Settings, UserPlus, Bell, Camera, Gift, AtSign, Plus, Home, Utensils, User, Heart, Share2, X } from 'lucide-react'
 import APITunnel from '@/lib/api-tunnel'
 
 export default function MessengerPage() {
-  const [activeTab, setActiveTab] = useState<'chats' | 'friends' | 'groups' | 'discover'>('chats')
+  const [activeTab, setActiveTab] = useState<'chats' | 'friends' | 'groups' | 'discover' | 'feed' | 'profile'>('feed')
   const [friends, setFriends] = useState<any[]>([])
   const [conversations, setConversations] = useState<any[]>([])
   const [selectedConversation, setSelectedConversation] = useState<any>(null)
@@ -14,11 +14,66 @@ export default function MessengerPage() {
   const [newMessage, setNewMessage] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [loading, setLoading] = useState(true)
+  const [posts, setPosts] = useState<any[]>([])
+  const [newPost, setNewPost] = useState('')
+  const [showNewPostModal, setShowNewPostModal] = useState(false)
+  const [isMessengerMode, setIsMessengerMode] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     fetchData()
   }, [activeTab])
+
+  useEffect(() => {
+    // Listen for messenger mode toggle events
+    const handleMessengerModeToggle = (event: CustomEvent) => {
+      setIsMessengerMode(event.detail);
+    };
+
+    window.addEventListener('messengerModeToggle', handleMessengerModeToggle as EventListener);
+    
+    // Check initial messenger mode from body class
+    setIsMessengerMode(document.body.classList.contains('messenger-mode'));
+
+    return () => {
+      window.removeEventListener('messengerModeToggle', handleMessengerModeToggle as EventListener);
+    };
+  }, []);
+
+  useEffect(() => {
+    // Load sample posts for feed
+    setPosts([
+      {
+        id: '1',
+        user: { name: 'Alex Johnson', username: 'alexj', avatar: 'AJ' },
+        content: 'Just ordered from Campus Cafe! Their coffee is amazing ☕️',
+        image: 'https://images.unsplash.com/photo-1554112343-9c0c1d4d9b0a?w=300&h=200&fit=crop',
+        likes: 24,
+        comments: 5,
+        timestamp: '2 hours ago',
+        isLiked: false
+      },
+      {
+        id: '2',
+        user: { name: 'Sarah Miller', username: 'sarahm', avatar: 'SM' },
+        content: 'Group order for Pizza Palace tonight! Who\'s in? 🍕',
+        likes: 18,
+        comments: 12,
+        timestamp: '4 hours ago',
+        isLiked: true
+      },
+      {
+        id: '3',
+        user: { name: 'Mike Chen', username: 'mikec', avatar: 'MC' },
+        content: 'New sushi place on campus is incredible! Highly recommend the salmon rolls 🍣',
+        image: 'https://images.unsplash.com/photo-1579584425555-c3ce17fd4351?w=300&h=200&fit=crop',
+        likes: 32,
+        comments: 8,
+        timestamp: '1 day ago',
+        isLiked: false
+      }
+    ])
+  }, [])
 
   useEffect(() => {
     scrollToBottom()
@@ -81,9 +136,19 @@ export default function MessengerPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar */}
-      <div className="w-16 md:w-64 bg-white border-r border-gray-200 flex flex-col">
+    <AnimatePresence>
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className={`min-h-screen ${isMessengerMode ? 'fixed inset-0 z-50' : 'bg-gray-50'} flex`}
+      >
+        {/* Sidebar */}
+        <motion.div 
+          initial={{ x: -100 }}
+          animate={{ x: 0 }}
+          className="w-16 md:w-64 bg-white border-r border-gray-200 flex flex-col shadow-xl"
+        >
         {/* Logo and Navigation */}
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center">
@@ -97,6 +162,17 @@ export default function MessengerPage() {
         {/* Main Navigation */}
         <div className="flex-1 py-4">
           <nav className="space-y-1">
+            <button
+              onClick={() => setActiveTab('feed')}
+              className={`w-full flex items-center px-4 py-3 text-sm font-medium transition-colors ${
+                activeTab === 'feed'
+                  ? 'bg-orange-50 text-orange-600 border-r-2 border-orange-600'
+                  : 'text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              <Home className="h-5 w-5" />
+              <span className="ml-3 hidden md:block">Feed</span>
+            </button>
             <button
               onClick={() => setActiveTab('chats')}
               className={`w-full flex items-center px-4 py-3 text-sm font-medium transition-colors ${
@@ -141,6 +217,17 @@ export default function MessengerPage() {
               <Search className="h-5 w-5" />
               <span className="ml-3 hidden md:block">Discover</span>
             </button>
+            <button
+              onClick={() => setActiveTab('profile')}
+              className={`w-full flex items-center px-4 py-3 text-sm font-medium transition-colors ${
+                activeTab === 'profile'
+                  ? 'bg-orange-50 text-orange-600 border-r-2 border-orange-600'
+                  : 'text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              <User className="h-5 w-5" />
+              <span className="ml-3 hidden md:block">Profile</span>
+            </button>
           </nav>
         </div>
 
@@ -161,7 +248,7 @@ export default function MessengerPage() {
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Main Content */}
       <div className="flex-1 flex">
@@ -183,6 +270,91 @@ export default function MessengerPage() {
 
           {/* Conversation List */}
           <div className="flex-1 overflow-y-auto">
+            {activeTab === 'feed' && (
+              <div className="p-4">
+                {/* Create Post */}
+                <div className="mb-6">
+                  <div className="flex items-center p-4 bg-white rounded-lg border border-gray-200">
+                    <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-red-500 rounded-full flex items-center justify-center text-white font-bold mr-3">
+                      U
+                    </div>
+                    <button 
+                      onClick={() => setShowNewPostModal(true)}
+                      className="flex-1 text-left text-gray-500 bg-gray-100 rounded-full px-4 py-2 hover:bg-gray-200 transition-colors"
+                    >
+                      Share what you're ordering...
+                    </button>
+                  </div>
+                </div>
+                
+                {/* Posts */}
+                <div className="space-y-6">
+                  {posts.map((post) => (
+                    <div key={post.id} className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                      {/* Post Header */}
+                      <div className="p-4 flex items-center">
+                        <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-red-500 rounded-full flex items-center justify-center text-white font-bold mr-3">
+                          {post.user.avatar}
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-bold text-gray-900">{post.user.name}</h3>
+                          <p className="text-sm text-gray-500">@{post.user.username} · {post.timestamp}</p>
+                        </div>
+                        <button className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100">
+                          <MoreHorizontal size={18} />
+                        </button>
+                      </div>
+                      
+                      {/* Post Content */}
+                      <div className="px-4 pb-3">
+                        <p className="text-gray-800">{post.content}</p>
+                      </div>
+                      
+                      {/* Post Image */}
+                      {post.image && (
+                        <div className="w-full h-64 bg-gray-200">
+                          <img 
+                            src={post.image} 
+                            alt="Post" 
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.onerror = null;
+                              target.src = 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&h=300&fit=crop';
+                            }}
+                          />
+                        </div>
+                      )}
+                      
+                      {/* Post Actions */}
+                      <div className="p-4 flex items-center justify-between border-t border-gray-100">
+                        <button 
+                          className={`flex items-center space-x-2 ${post.isLiked ? 'text-red-500' : 'text-gray-500 hover:text-gray-700'}`}
+                          onClick={() => {
+                            setPosts(prev => prev.map(p => 
+                              p.id === post.id 
+                                ? { ...p, isLiked: !p.isLiked, likes: p.isLiked ? p.likes - 1 : p.likes + 1 }
+                                : p
+                            ));
+                          }}
+                        >
+                          <Heart className={`h-5 w-5 ${post.isLiked ? 'fill-current' : ''}`} />
+                          <span>{post.likes}</span>
+                        </button>
+                        <button className="flex items-center space-x-2 text-gray-500 hover:text-gray-700">
+                          <MessageCircle className="h-5 w-5" />
+                          <span>{post.comments}</span>
+                        </button>
+                        <button className="flex items-center space-x-2 text-gray-500 hover:text-gray-700">
+                          <Share2 className="h-5 w-5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
             {activeTab === 'chats' && (
               <div className="p-2">
                 {conversations.map((conversation) => (
@@ -270,6 +442,64 @@ export default function MessengerPage() {
                 <Search className="mx-auto h-12 w-12 text-gray-400" />
                 <h3 className="mt-2 text-lg font-medium text-gray-900">Discover</h3>
                 <p className="mt-1 text-gray-500">Find new friends and groups</p>
+              </div>
+            )}
+            
+            {activeTab === 'profile' && (
+              <div className="p-4">
+                <div className="bg-white rounded-lg border border-gray-200 p-6">
+                  <div className="flex flex-col items-center">
+                    <div className="w-24 h-24 bg-gradient-to-br from-orange-400 to-red-500 rounded-full flex items-center justify-center text-white text-3xl font-bold mb-4">
+                      U
+                    </div>
+                    <h2 className="text-2xl font-bold text-gray-900">User Name</h2>
+                    <p className="text-gray-600 mb-6">@username</p>
+                    
+                    <div className="w-full space-y-4">
+                      <div className="flex justify-between py-2 border-b border-gray-100">
+                        <span className="text-gray-600">Posts</span>
+                        <span className="font-medium">42</span>
+                      </div>
+                      <div className="flex justify-between py-2 border-b border-gray-100">
+                        <span className="text-gray-600">Friends</span>
+                        <span className="font-medium">128</span>
+                      </div>
+                      <div className="flex justify-between py-2 border-b border-gray-100">
+                        <span className="text-gray-600">Group Orders</span>
+                        <span className="font-medium">24</span>
+                      </div>
+                    </div>
+                    
+                    <button className="mt-6 w-full bg-gradient-to-r from-orange-500 to-red-500 text-white py-2 px-4 rounded-lg font-medium hover:opacity-90 transition-opacity">
+                      Edit Profile
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="mt-6 bg-white rounded-lg border border-gray-200 p-6">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4">Recent Activity</h3>
+                  <div className="space-y-4">
+                    <div className="flex items-center p-3 bg-gray-50 rounded-lg">
+                      <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center mr-3">
+                        <Utensils className="h-5 w-5 text-orange-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">Ordered from Pizza Palace</p>
+                        <p className="text-sm text-gray-500">2 hours ago</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center p-3 bg-gray-50 rounded-lg">
+                      <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                        <Users className="h-5 w-5 text-green-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">Joined a group order</p>
+                        <p className="text-sm text-gray-500">1 day ago</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -390,6 +620,7 @@ export default function MessengerPage() {
           )}
         </div>
       </div>
-    </div>
+    </motion.div>
+    </AnimatePresence>
   )
 }

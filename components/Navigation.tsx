@@ -15,6 +15,7 @@ export default function Navigation() {
   const { data: session, status } = useSession()
   const [userRole, setUserRole] = useState<string | null>(null)
   const [rfidBalance, setRfidBalance] = useState<number | null>(null)
+  const [isMessengerMode, setIsMessengerMode] = useState(false)
   
   // Different navigation items based on user role
   const getNavItems = () => {
@@ -85,6 +86,27 @@ export default function Navigation() {
     await signOut({ callbackUrl: '/' })
   }
 
+  const toggleMessengerMode = () => {
+    setIsMessengerMode(!isMessengerMode)
+    // Emit a custom event to notify the app about the mode change
+    window.dispatchEvent(new CustomEvent('messengerModeToggle', { detail: !isMessengerMode }))
+    
+    // Update the body class for styling
+    if (!isMessengerMode) {
+      document.body.classList.add('messenger-mode')
+      // Navigate to messenger if not already there
+      if (pathname !== '/messenger') {
+        window.location.href = '/messenger'
+      }
+    } else {
+      document.body.classList.remove('messenger-mode')
+      // Navigate to home if currently in messenger
+      if (pathname === '/messenger') {
+        window.location.href = '/'
+      }
+    }
+  }
+
   return (
     <>
       <nav className={`bg-white/90 backdrop-blur-md shadow-sm border-b border-gray-200 sticky top-0 z-40 transition-all duration-300 ${
@@ -138,6 +160,24 @@ export default function Navigation() {
                     <ShoppingCart className="h-5 w-5" />
                   </button>
                   
+                  {/* Messenger Mode Toggle */}
+                  <motion.button 
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={toggleMessengerMode}
+                    className={`p-2 rounded-lg transition-all duration-300 ${isMessengerMode ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}`}
+                    title={isMessengerMode ? 'Exit Messenger Mode' : 'Enter Messenger Mode'}
+                  >
+                    <MessageCircle className="h-5 w-5" />
+                    {isMessengerMode && (
+                      <motion.span 
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"
+                      />
+                    )}
+                  </motion.button>
+                  
                   {/* User Profile Dropdown */}
                   <div className="relative">
                     <Link 
@@ -183,7 +223,25 @@ export default function Navigation() {
             </div>
             
             {/* Mobile menu button */}
-            <div className="flex items-center lg:hidden">
+            <div className="flex items-center space-x-2 lg:hidden">
+              {/* Messenger Mode Toggle for Mobile */}
+              <motion.button 
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={toggleMessengerMode}
+                className={`p-2 rounded-lg transition-all duration-300 ${isMessengerMode ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}`}
+                title={isMessengerMode ? 'Exit Messenger Mode' : 'Enter Messenger Mode'}
+              >
+                <MessageCircle className="h-5 w-5" />
+                {isMessengerMode && (
+                  <motion.span 
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"
+                  />
+                )}
+              </motion.button>
+                              
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 className="inline-flex items-center justify-center p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary"

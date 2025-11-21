@@ -513,10 +513,14 @@ export default function GroupOrders() {
               {filteredGroupOrders.map((groupOrder) => (
                 <motion.div
                   key={groupOrder.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-all duration-200"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  whileHover={{ y: -5, scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                  className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-all duration-300 relative overflow-hidden"
                 >
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/5 opacity-0 hover:opacity-100 transition-opacity duration-300 rounded-2xl"></div>
                   <div className="flex justify-between items-start mb-4">
                     <div>
                       <h3 className="font-bold text-lg text-textPrimary">{groupOrder.vendor.shopName}</h3>
@@ -533,6 +537,10 @@ export default function GroupOrders() {
                     <div className="flex justify-between">
                       <span className="text-textSecondary">Total</span>
                       <span className="font-bold text-primary">{formatCurrency(groupOrder.totalAmount)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-textSecondary">Vendor</span>
+                      <span className="font-semibold">{groupOrder.vendor.shopName}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-textSecondary">Participants</span>
@@ -555,20 +563,25 @@ export default function GroupOrders() {
                   </div>
 
                   <div className="flex gap-2">
-                    <button 
+                    <motion.button 
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
                       onClick={() => window.open(`/group-order/${groupOrder.id}`, '_blank')}
-                      className="flex-1 bg-primary text-white py-2 px-4 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 hover:opacity-90 transition"
+                      className="flex-1 bg-gradient-to-r from-primary to-secondary text-white py-3 px-4 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 hover:shadow-lg transition-all duration-300 relative overflow-hidden"
                     >
+                      <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-white/5 opacity-0 hover:opacity-100 transition-opacity duration-300"></div>
                       <ExternalLink size={16} />
                       <span>View Details</span>
-                    </button>
-                    <button 
+                    </motion.button>
+                    <motion.button 
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
                       onClick={() => copyShareLink(groupOrder.shareLink)}
-                      className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center justify-center transition-colors"
+                      className="p-3 border-2 border-dashed border-gray-300 rounded-xl hover:border-primary hover:bg-primary/10 flex items-center justify-center transition-all duration-300"
                       title="Copy share link"
                     >
-                      <Copy size={18} />
-                    </button>
+                      <Copy size={18} className="text-gray-500 hover:text-primary transition-colors" />
+                    </motion.button>
                   </div>
                 </motion.div>
               ))}

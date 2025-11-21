@@ -34,19 +34,29 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { groupOrderId } = body
 
-    // In a real implementation, this would generate a new invoice from a group order
-    // For now, we'll return a placeholder response
-    return NextResponse.json({
+    // Fetch the group order to generate invoice from
+    const groupOrder = await DatabaseService.getGroupOrderById(groupOrderId)
+    
+    if (!groupOrder) {
+      return NextResponse.json({ error: 'Group order not found' }, { status: 404 })
+    }
+
+    // Generate invoice data
+    const invoiceData = {
       id: groupOrderId,
       orderNumber: `INV-${groupOrderId.substring(0, 8).toUpperCase()}`,
       createdAt: new Date().toISOString(),
-      totalAmount: 0,
-      vendor: { shopName: 'Sample Vendor' },
+      totalAmount: (groupOrder as any).totalAmount || 0,
+      vendor: (groupOrder as any).vendor || { shopName: 'Unknown Vendor' },
       status: 'PAID',
-      items: [],
-      participantCount: 1,
-      splitType: 'equal'
-    })
+      items: (groupOrder as any).items || [],
+      participantCount: (groupOrder as any).participantCount || 1,
+      splitType: (groupOrder as any).splitType || 'equal'
+    }
+
+    // In a real implementation, this would save the invoice to the database
+    // and generate a PDF
+    return NextResponse.json(invoiceData)
   } catch (error) {
     console.error('Error generating invoice:', error)
     return NextResponse.json({ error: 'Failed to generate invoice' }, { status: 500 })

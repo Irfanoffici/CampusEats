@@ -76,13 +76,13 @@ export async function PUT(request: Request) {
     const body = await request.json()
     const { groupOrderId, isFinalized } = body
 
-    // In a real implementation, we would update the group order in the database
-    // For now, we'll just return a success response
+    // Update the group order in the database
+    const updatedGroupOrder = await DatabaseService.updateGroupOrder(groupOrderId, { isFinalized })
+    
     return NextResponse.json({ 
       success: true, 
       message: 'Group order updated successfully',
-      groupOrderId,
-      isFinalized
+      groupOrder: updatedGroupOrder
     })
   } catch (error) {
     console.error('Error updating group order:', error)
@@ -105,8 +105,9 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Group order ID is required' }, { status: 400 })
     }
 
-    // In a real implementation, we would delete the group order from the database
-    // For now, we'll just return a success response
+    // Delete the group order from the database
+    await DatabaseService.deleteGroupOrder(groupOrderId)
+    
     return NextResponse.json({ 
       success: true, 
       message: 'Group order deleted successfully',
