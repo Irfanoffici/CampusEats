@@ -180,55 +180,60 @@ export class DatabaseService {
         async () => {
           console.log(`[DB-Service] Prisma Fallback: Fetching orders for user ${userId} with role ${role}`)
           
-          if (role === 'STUDENT') {
-            return await prisma.order.findMany({
-              where: { studentId: userId },
-              include: { vendor: true },
-              orderBy: { createdAt: 'desc' },
-            })
-          } else if (role === 'VENDOR') {
-            const user = await prisma.user.findUnique({
-              where: { id: userId },
-              include: { vendor: true }
-            })
-            
-            console.log(`[DB-Service] Vendor user:`, user?.vendor ? `Found vendor: ${user.vendor.id}` : 'No vendor found')
-            
-            if (!user?.vendor) {
-              console.log('[DB-Service] User has no vendor association')
-              return []
-            }
+          try {
+            if (role === 'STUDENT') {
+              return await prisma.order.findMany({
+                where: { studentId: userId },
+                include: { vendor: true },
+                orderBy: { createdAt: 'desc' },
+              })
+            } else if (role === 'VENDOR') {
+              const user = await prisma.user.findUnique({
+                where: { id: userId },
+                include: { vendor: true }
+              })
+              
+              console.log(`[DB-Service] Vendor user:`, user?.vendor ? `Found vendor: ${user.vendor.id}` : 'No vendor found')
+              
+              if (!user?.vendor) {
+                console.log('[DB-Service] User has no vendor association')
+                return []
+              }
 
-            const orders = await prisma.order.findMany({
-              where: { vendorId: user.vendor.id },
-              include: {
-                student: {
-                  select: {
-                    fullName: true,
-                    phoneNumber: true,
+              const orders = await prisma.order.findMany({
+                where: { vendorId: user.vendor.id },
+                include: {
+                  student: {
+                    select: {
+                      fullName: true,
+                      phoneNumber: true,
+                    },
                   },
                 },
-              },
-              orderBy: { createdAt: 'desc' },
-            })
-            
-            console.log(`[DB-Service] Found ${orders.length} orders for vendor ${user.vendor.id}`)
-            return orders
-          } else if (role === 'ADMIN') {
-            return await prisma.order.findMany({
-              include: {
-                vendor: true,
-                student: {
-                  select: {
-                    fullName: true,
-                    phoneNumber: true,
+                orderBy: { createdAt: 'desc' },
+              })
+              
+              console.log(`[DB-Service] Found ${orders.length} orders for vendor ${user.vendor.id}`)
+              return orders
+            } else if (role === 'ADMIN') {
+              return await prisma.order.findMany({
+                include: {
+                  vendor: true,
+                  student: {
+                    select: {
+                      fullName: true,
+                      phoneNumber: true,
+                    },
                   },
                 },
-              },
-              orderBy: { createdAt: 'desc' },
-            })
+                orderBy: { createdAt: 'desc' },
+              })
+            }
+            return []
+          } catch (error) {
+            console.log('[DB-Service] Prisma: Database not available, returning empty array')
+            return []
           }
-          return []
         },
         // NetlifyDB fallback (TERTIARY) - placeholder
         async () => {
@@ -644,8 +649,8 @@ export class DatabaseService {
           const vendorsRef = collection(firestore!, 'vendors')
           const q = query(
             vendorsRef,
-            where('isActive', '==', true),
-            orderBy('averageRating', 'desc')
+            where('isActive', '==', true)
+            // Removed orderBy to avoid composite index requirement
           )
           const snapshot = await getDocs(q)
           console.log(`[DB-Service] Firebase: Found ${snapshot.docs.length} vendors`)
@@ -656,20 +661,25 @@ export class DatabaseService {
         // Prisma fallback (SECONDARY)
         async () => {
           console.log('[DB-Service] Prisma: Fetching active vendors')
-          return await prisma.vendor.findMany({
-            where: { isActive: true },
-            include: {
-              user: {
-                select: {
-                  fullName: true,
-                  phoneNumber: true,
+          try {
+            return await prisma.vendor.findMany({
+              where: { isActive: true },
+              include: {
+                user: {
+                  select: {
+                    fullName: true,
+                    phoneNumber: true,
+                  },
                 },
               },
-            },
-            orderBy: {
-              averageRating: 'desc',
-            },
-          })
+              orderBy: {
+                averageRating: 'desc',
+              },
+            })
+          } catch (error) {
+            console.log('[DB-Service] Prisma: Database not available, returning empty array')
+            return []
+          }
         },
         // NetlifyDB fallback (TERTIARY) - placeholder
         async () => {
