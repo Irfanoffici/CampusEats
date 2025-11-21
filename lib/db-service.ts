@@ -2615,4 +2615,116 @@ export class DatabaseService {
       }
     )
   }
+  
+  // Update group order
+  static async updateGroupOrder(id: string, updateData: any) {
+    return this.syncWrite(
+      'update',
+      // Firebase write (PRIMARY)
+      async () => {
+        console.log(`[DB-Service] Firebase: Updating group order ${id}`)
+        if (!isFirebaseAvailable || !firestore) {
+          throw new Error('Firebase not available')
+        }
+        
+        const groupOrdersRef = collection(firestore!, 'groupOrders')
+        const q = query(groupOrdersRef, where('id', '==', id))
+        const snapshot = await getDocs(q)
+        
+        if (snapshot.empty) {
+          throw new Error('Group order not found')
+        }
+        
+        const groupOrderRef = doc(firestore!, 'groupOrders', snapshot.docs[0].id)
+        await updateDoc(groupOrderRef, {
+          ...updateData,
+          updatedAt: new Date()
+        })
+        
+        return { id, ...updateData }
+      },
+      // Supabase write (SECONDARY)
+      async () => {
+        console.log(`[DB-Service] Supabase: Updating group order ${id}`)
+        const cookieStore = cookies()
+        const supabase = createServerComponentClient(cookieStore)
+        
+        const { data, error } = await supabase
+          .from('groupOrders')
+          .update({ 
+            ...updateData,
+            updatedAt: new Date()
+          })
+          .eq('id', id)
+          .select()
+          .single()
+        
+        if (error) throw error
+        return data
+      },
+      // Prisma write (TERTIARY)
+      async () => {
+        console.log(`[DB-Service] Prisma: Updating group order ${id}`)
+        const updatedGroupOrder = await prisma.groupOrder.update({
+          where: { id },
+          data: {
+            ...updateData,
+            updatedAt: new Date()
+          }
+        })
+        
+        return updatedGroupOrder
+      }
+    )
+  }
+  
+  // Delete group order
+  static async deleteGroupOrder(id: string) {
+    return this.syncWrite(
+      'delete',
+      // Firebase write (PRIMARY)
+      async () => {
+        console.log(`[DB-Service] Firebase: Deleting group order ${id}`)
+        if (!isFirebaseAvailable || !firestore) {
+          throw new Error('Firebase not available')
+        }
+        
+        const groupOrdersRef = collection(firestore!, 'groupOrders')
+        const q = query(groupOrdersRef, where('id', '==', id))
+        const snapshot = await getDocs(q)
+        
+        if (snapshot.empty) {
+          throw new Error('Group order not found')
+        }
+        
+        const groupOrderRef = doc(firestore!, 'groupOrders', snapshot.docs[0].id)
+        await deleteDoc(groupOrderRef)
+        
+        return { id }
+      },
+      // Supabase write (SECONDARY)
+      async () => {
+        console.log(`[DB-Service] Supabase: Deleting group order ${id}`)
+        const cookieStore = cookies()
+        const supabase = createServerComponentClient(cookieStore)
+        
+        const { error } = await supabase
+          .from('groupOrders')
+          .delete()
+          .eq('id', id)
+        
+        if (error) throw error
+        return { id }
+      },
+      // Prisma write (TERTIARY)
+      async () => {
+        console.log(`[DB-Service] Prisma: Deleting group order ${id}`)
+        await prisma.groupOrder.delete({
+          where: { id }
+        })
+        
+        return { id }
+      }
+    )
+  }
 }
