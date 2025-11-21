@@ -1,4 +1,6 @@
 /** @type {import('tailwindcss').Config} */
+const { theme } = require('tailwindcss/defaultTheme')
+
 module.exports = {
   darkMode: ["class"],
   content: [
@@ -20,6 +22,7 @@ module.exports = {
         'slide-in-right': 'slide-in-right 0.3s ease-out',
         'fade-in': 'fade-in 0.2s ease-out',
         'scale-in': 'scale-in 0.2s ease-out',
+        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
       },
       keyframes: {
         'bounce-soft': {
@@ -42,6 +45,11 @@ module.exports = {
       boxShadow: {
         'soft': '0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04)',
         'glow': '0 0 20px rgba(252, 128, 25, 0.3)',
+        'touch': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+      },
+      screens: {
+        'xs': '475px',
+        ...theme.screens,
       },
     },
   },

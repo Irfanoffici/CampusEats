@@ -6,11 +6,47 @@
   body {
     @apply bg-white text-textPrimary;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    touch-action: manipulation;
+  }
+  
+  button, a, [role="button"] {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  
+  img {
+    -webkit-user-drag: none;
+    -khtml-user-drag: none;
+    -moz-user-drag: none;
+    -o-user-drag: none;
+    user-drag: none;
   }
 }
 
 @layer utilities {
   .text-gradient {
     @apply bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent;
+  }
+  
+  .touch-pan-y {
+    touch-action: pan-y;
+  }
+  
+  .touch-pan-x {
+    touch-action: pan-x;
+  }
+  
+  .no-tap-highlight {
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  .scroll-snap-none {
+    scroll-snap-type: none;
+  }
+  
+  .scroll-snap-y {
+    scroll-snap-type: y mandatory;
   }
 }

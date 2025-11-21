@@ -103,19 +103,19 @@ export default function StudentDashboard() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-gradient">CampusEats</h1>
-              <p className="text-sm text-textSecondary">Welcome, {session?.user?.name}</p>
+              <p className="text-sm text-textSecondary hidden sm:block">Welcome, {session?.user?.name}</p>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4">
               {/* RFID Balance */}
               <motion.div
                 whileHover={{ scale: 1.05 }}
-                className="bg-gradient-to-r from-primary to-secondary text-white px-4 py-2 rounded-lg flex items-center gap-2"
+                className="bg-gradient-to-r from-primary to-secondary text-white px-3 py-2 rounded-lg flex items-center gap-2"
               >
-                <Wallet size={20} />
+                <Wallet size={16} className="sm:size-20" />
                 <div className="text-right">
-                  <p className="text-xs opacity-90">RFID Balance</p>
-                  <p className="font-bold">{balance !== null ? formatCurrency(balance) : '...'}</p>
+                  <p className="text-xs opacity-90 hidden xs:block">RFID Balance</p>
+                  <p className="font-bold text-sm xs:text-base">{balance !== null ? formatCurrency(balance) : '...'}</p>
                 </div>
               </motion.div>
 
@@ -124,14 +124,14 @@ export default function StudentDashboard() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setShowCart(true)}
-                className="relative bg-primary text-white p-3 rounded-full shadow-lg"
+                className="relative bg-primary text-white p-2 sm:p-3 rounded-full shadow-lg"
               >
-                <ShoppingCart size={24} />
+                <ShoppingCart size={20} className="sm:size-24" />
                 {cartCount > 0 && (
                   <motion.span
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    className="absolute -top-1 -right-1 bg-secondary text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center"
+                    className="absolute -top-1 -right-1 bg-secondary text-white text-xs font-bold rounded-full h-5 w-5 sm:h-6 sm:w-6 flex items-center justify-center"
                   >
                     {cartCount}
                   </motion.span>
@@ -143,18 +143,18 @@ export default function StudentDashboard() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => signOut({ callbackUrl: '/login' })}
-                className="bg-red-500 text-white p-3 rounded-full"
+                className="bg-red-500 text-white p-2 sm:p-3 rounded-full"
               >
-                <LogOut size={20} />
+                <LogOut size={16} className="sm:size-20" />
               </motion.button>
             </div>
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-4 mt-4 border-b border-gray-200">
+          <div className="flex gap-2 sm:gap-4 mt-4 border-b border-gray-200 overflow-x-auto">
             <button
               onClick={() => setActiveTab('vendors')}
-              className={`pb-2 px-4 font-medium transition ${
+              className={`pb-2 px-3 sm:px-4 font-medium transition whitespace-nowrap ${
                 activeTab === 'vendors'
                   ? 'text-primary border-b-2 border-primary'
                   : 'text-textSecondary'
@@ -164,7 +164,7 @@ export default function StudentDashboard() {
             </button>
             <button
               onClick={() => setActiveTab('history')}
-              className={`pb-2 px-4 font-medium transition ${
+              className={`pb-2 px-3 sm:px-4 font-medium transition whitespace-nowrap ${
                 activeTab === 'history'
                   ? 'text-primary border-b-2 border-primary'
                   : 'text-textSecondary'
