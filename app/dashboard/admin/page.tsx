@@ -384,7 +384,7 @@ export default function AdminDashboard() {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => signOut({ callbackUrl: 'https://campuseatsmec.netlify.app/', redirect: true })}
+              onClick={() => signOut({ callbackUrl: '/', redirect: true })}
               className="bg-red-500 hover:bg-red-600 text-white p-3 rounded-full transition-colors shadow-lg"
               title="Logout"
             >

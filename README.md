@@ -115,6 +115,37 @@ Navigate to [http://localhost:3000](http://localhost:3000)
 
 ---
 
+## ☁️ Vercel Deployment
+
+### Prerequisites
+- Vercel account
+- This repository connected to Vercel
+
+### Environment Variables
+In your Vercel project settings, add the following environment variables:
+
+```
+DATABASE_URL=file:./dev.db
+NEXTAUTH_SECRET=your-super-secret-key-here
+NEXTAUTH_URL=https://your-project-name.vercel.app
+```
+
+Replace `your-super-secret-key-here` with a strong secret (use `openssl rand -base64 32` to generate one).
+
+### Deployment Steps
+1. Connect your GitHub repository to Vercel
+2. Configure the environment variables as shown above
+3. Set the build command to `npm run vercel-build`
+4. Set the output directory to `.next`
+5. Deploy!
+
+### Notes
+- Vercel will automatically run the build process
+- The database will be SQLite-based and stored in the project
+- For production use, consider migrating to a cloud database
+
+---
+
 ## 👤 Login Credentials
 
 ### Student Account

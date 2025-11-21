@@ -142,7 +142,7 @@ export default function StudentDashboard() {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => signOut({ callbackUrl: 'https://campuseatsmec.netlify.app/login' })}
+                onClick={() => signOut({ callbackUrl: '/login' })}
                 className="bg-red-500 text-white p-3 rounded-full"
               >
                 <LogOut size={20} />
