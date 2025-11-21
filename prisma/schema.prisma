@@ -130,3 +130,16 @@ model Transaction {
   description     String
   createdAt       DateTime        @default(now())
 }
+
+model OTP {
+  id          String   @id @default(uuid())
+  phoneNumber String?
+  email       String?
+  otp         String
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+
+  @@index([phoneNumber])
+  @@index([email])
+  @@index([otp])
+}

@@ -1,8 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Clock, Check, Package, Star, Eye, MessageSquare } from 'lucide-react'
+import { Clock, Check, Package, Star, Eye, MessageSquare, FileText } from 'lucide-react'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import OrderTracker from '@/components/OrderTracker'
 import APITunnel from '@/lib/api-tunnel'
@@ -29,6 +30,7 @@ interface Review {
 }
 
 export default function OrderHistory() {
+  const router = useRouter()
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
@@ -127,7 +129,16 @@ export default function OrderHistory() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-bold text-textPrimary mb-6">Order History</h2>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold text-textPrimary">Order History</h2>
+        <button 
+          onClick={() => router.push('/dashboard/student?tab=invoices')}
+          className="flex items-center gap-2 text-primary hover:underline"
+        >
+          <FileText size={20} />
+          <span>View All Invoices</span>
+        </button>
+      </div>
 
       {orders.map((order) => (
         <motion.div

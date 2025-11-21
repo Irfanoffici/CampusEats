@@ -12,10 +12,13 @@ A full-stack web application built with Next.js, featuring three separate portal
 - **Browse Vendors** - View all active food vendors with ratings and reviews
 - **Menu Browsing** - Filter by categories (Breakfast, Lunch, Dinner, Snacks, Beverages)
 - **Shopping Cart** - Add items from a single vendor
+- **Group Ordering** - Split bills with friends and share orders
+- **Invoice Management** - Generate and access invoices for group orders
 - **Multiple Payment Methods**:
   - 💳 RFID Card (balance hold → deduct on pickup)
   - 📱 UPI with QR Code
   - 💰 Demo Card Gateway (test mode)
+  - 💵 Cash on delivery
 - **Order Tracking** - Real-time status updates
 - **RFID Balance Management** - View and top up balance
 - **Order History** - Track past orders
@@ -40,6 +43,7 @@ A full-stack web application built with Next.js, featuring three separate portal
   - Average order value
 - **Order List** - View all orders across vendors
 - **User Management** - Manage students, vendors, admins
+- **RFID Management** - Credit RFID balances for students
 - **System Overview** - Complete platform statistics
 
 ### 💎 Additional Features
@@ -51,6 +55,8 @@ A full-stack web application built with Next.js, featuring three separate portal
 - **QR Code Generation** - For UPI payments and invoices
 - **Database Health Monitoring** - Built-in health checks
 - **Comprehensive Testing** - 10 automated system tests
+- **Dual Signup System** - Separate registration for MEC and non-MEC students
+- **RFID Integration** - Special access for MEC students with campus RFID cards
 
 ---
 

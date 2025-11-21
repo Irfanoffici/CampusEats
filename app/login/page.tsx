@@ -5,33 +5,65 @@ import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
+import { AlertCircle, CheckCircle } from 'lucide-react'
 
 export default function LoginPage() {
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
+
+  const validateForm = () => {
+    if (!email || !password) {
+      setError('Please fill in all fields')
+      return false
+    }
+    
+    if (!/\S+@\S+\.\S+/.test(email)) {
+      setError('Please enter a valid email address')
+      return false
+    }
+    
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters')
+      return false
+    }
+    
+    setError(null)
+    return true
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!validateForm()) {
+      return
+    }
+    
     setLoading(true)
-
+    setError(null)
+    setSuccess(false)
+    
     try {
       const result = await signIn('credentials', {
         email,
         password,
         redirect: false,
       })
-
+      
       if (result?.error) {
-        toast.error('Invalid credentials')
+        setError('Invalid email or password. Please try again.')
       } else {
+        setSuccess(true)
         toast.success('Login successful!')
         router.push('/dashboard')
         router.refresh()
       }
     } catch (error) {
-      toast.error('Login failed')
+      setError('An unexpected error occurred. Please try again.')
+      console.error('Login error:', error)
     } finally {
       setLoading(false)
     }
@@ -67,6 +99,7 @@ export default function LoginPage() {
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.3 }}
           className="w-full max-w-md"
         >
           <div className="lg:hidden text-center mb-8">
@@ -83,45 +116,76 @@ export default function LoginPage() {
             <h2 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h2>
             <p className="text-gray-600 mb-8">Sign in to continue ordering</p>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label className="block text-sm font-medium text-textSecondary mb-2">
-                Email
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition"
-                placeholder="your.email@mec.edu"
-                required
-              />
-            </div>
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3"
+              >
+                <AlertCircle className="text-red-500" size={20} />
+                <span className="text-red-700 text-sm">{error}</span>
+              </motion.div>
+            )}
 
-            <div>
-              <label className="block text-sm font-medium text-textSecondary mb-2">
-                Password
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition"
-                placeholder="••••••••"
-                required
-              />
-            </div>
+            {success && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3"
+              >
+                <CheckCircle className="text-green-500" size={20} />
+                <span className="text-green-700 text-sm">Login successful! Redirecting...</span>
+              </motion.div>
+            )}
 
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              type="submit"
-              disabled={loading}
-              className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Signing in...' : 'Sign In'}
-            </motion.button>
-          </form>
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div>
+                <label className="block text-sm font-medium text-textSecondary mb-2">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition duration-200"
+                  placeholder="your.email@mec.edu"
+                  required
+                  disabled={loading}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-textSecondary mb-2">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition duration-200"
+                  placeholder="••••••••"
+                  required
+                  disabled={loading}
+                />
+              </div>
+
+              <motion.button
+                whileHover={{ scale: !loading ? 1.02 : 1 }}
+                whileTap={{ scale: !loading ? 0.98 : 1 }}
+                type="submit"
+                disabled={loading}
+                className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                    Signing in...
+                  </>
+                ) : (
+                  'Sign In'
+                )}
+              </motion.button>
+            </form>
 
             <div className="mt-8 pt-6 border-t border-gray-100">
               <p className="text-sm text-gray-500 text-center mb-4">Demo Credentials:</p>

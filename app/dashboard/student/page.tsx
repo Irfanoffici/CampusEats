@@ -9,7 +9,9 @@ import { formatCurrency } from '@/lib/utils'
 import VendorGrid from '@/components/student/VendorGrid'
 import CartDrawer from '@/components/student/CartDrawer'
 import OrderHistory from '@/components/student/OrderHistory'
-import { ShoppingCart, LogOut, History, Wallet, Users } from 'lucide-react'
+import GroupOrders from '@/components/student/GroupOrders'
+import Invoices from '@/components/student/Invoices'
+import { ShoppingCart, LogOut, History, Wallet, Users, FileText } from 'lucide-react'
 
 interface CartItem {
   id: string
@@ -27,7 +29,16 @@ export default function StudentDashboard() {
   const [cart, setCart] = useState<CartItem[]>([])
   const [showCart, setShowCart] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
-  const [activeTab, setActiveTab] = useState<'vendors' | 'history'>('vendors')
+  const [activeTab, setActiveTab] = useState<'vendors' | 'history' | 'group-orders' | 'invoices'>('vendors')
+
+  // Handle tab parameter from URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    const tab = urlParams.get('tab')
+    if (tab && ['vendors', 'history', 'group-orders', 'invoices'].includes(tab)) {
+      setActiveTab(tab as 'vendors' | 'history' | 'group-orders' | 'invoices')
+    }
+  }, [])
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -172,6 +183,26 @@ export default function StudentDashboard() {
             >
               Order History
             </button>
+            <button
+              onClick={() => setActiveTab('group-orders')}
+              className={`pb-2 px-3 sm:px-4 font-medium transition whitespace-nowrap ${
+                activeTab === 'group-orders'
+                  ? 'text-primary border-b-2 border-primary'
+                  : 'text-textSecondary'
+              }`}
+            >
+              Group Orders
+            </button>
+            <button
+              onClick={() => setActiveTab('invoices')}
+              className={`pb-2 px-3 sm:px-4 font-medium transition whitespace-nowrap ${
+                activeTab === 'invoices'
+                  ? 'text-primary border-b-2 border-primary'
+                  : 'text-textSecondary'
+              }`}
+            >
+              Invoices
+            </button>
           </div>
         </div>
       </header>
@@ -188,7 +219,7 @@ export default function StudentDashboard() {
             >
               <VendorGrid onAddToCart={addToCart} />
             </motion.div>
-          ) : (
+          ) : activeTab === 'history' ? (
             <motion.div
               key="history"
               initial={{ opacity: 0, y: 20 }}
@@ -196,6 +227,24 @@ export default function StudentDashboard() {
               exit={{ opacity: 0, y: -20 }}
             >
               <OrderHistory />
+            </motion.div>
+          ) : activeTab === 'group-orders' ? (
+            <motion.div
+              key="group-orders"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+            >
+              <GroupOrders />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="invoices"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+            >
+              <Invoices />
             </motion.div>
           )}
         </AnimatePresence>

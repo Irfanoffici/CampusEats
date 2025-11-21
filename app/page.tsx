@@ -12,6 +12,7 @@ export default function HomePage() {
   const headerY = useTransform(scrollY, [0, 300], [0, -50])
   const headerOpacity = useTransform(scrollY, [0, 200], [1, 0.8])
   const [activeFeature, setActiveFeature] = useState(0)
+  const [isLoading, setIsLoading] = useState(false)
 
   const portals = [
     {
@@ -61,6 +62,11 @@ export default function HomePage() {
     return () => clearInterval(interval)
   }, [])
 
+  const handleNavigation = (path: string) => {
+    setIsLoading(true)
+    router.push(path)
+  }
+
   return (
     <div className="min-h-screen bg-white overflow-hidden">
       {/* Sticky Header */}
@@ -73,6 +79,7 @@ export default function HomePage() {
             <motion.div 
               initial={{ x: -20, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
+              transition={{ duration: 0.3 }}
               className="flex items-center gap-3"
             >
               <div className="w-11 h-11 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl flex items-center justify-center shadow-lg">
@@ -88,12 +95,14 @@ export default function HomePage() {
             <motion.button
               initial={{ x: 20, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
+              transition={{ duration: 0.3 }}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => router.push('/login')}
-              className="px-6 py-2.5 bg-gradient-to-r from-orange-500 to-red-500 text-white font-semibold rounded-full shadow-lg hover:shadow-xl transition-all"
+              onClick={() => handleNavigation('/login')}
+              disabled={isLoading}
+              className="px-6 py-2.5 bg-gradient-to-r from-orange-500 to-red-500 text-white font-semibold rounded-full shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50"
             >
-              Sign In
+              {isLoading ? 'Loading...' : 'Sign In'}
             </motion.button>
           </div>
         </div>
@@ -114,18 +123,19 @@ export default function HomePage() {
             <motion.div
               initial={{ opacity: 0, x: -50 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8 }}
+              transition={{ duration: 0.5 }}
             >
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-orange-50 border border-orange-200 text-orange-700 rounded-full mb-6 font-medium text-sm"
               >
                 <Sparkles size={16} className="text-orange-500" />
                 India's Fastest Campus Food Delivery
               </motion.div>
 
-              <h1 className="text-6xl lg:text-7xl font-black text-gray-900 mb-6 leading-tight">
+              <h1 className="text-5xl lg:text-6xl font-black text-gray-900 mb-6 leading-tight">
                 Order Food<br />
                 <span className="bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
                   In Minutes
@@ -138,19 +148,20 @@ export default function HomePage() {
 
               <div className="flex flex-wrap gap-4">
                 <motion.button
-                  whileHover={{ scale: 1.05, boxShadow: '0 20px 40px rgba(234, 88, 12, 0.3)' }}
+                  whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => router.push('/login')}
-                  className="px-8 py-4 bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold rounded-xl shadow-xl flex items-center gap-2 text-lg"
+                  onClick={() => handleNavigation('/login')}
+                  disabled={isLoading}
+                  className="px-8 py-4 bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold rounded-xl shadow-xl flex items-center gap-2 text-lg transition-all duration-200 disabled:opacity-50"
                 >
-                  Order Now
+                  {isLoading ? 'Loading...' : 'Order Now'}
                   <ArrowRight size={20} />
                 </motion.button>
                 
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="px-8 py-4 bg-white border-2 border-gray-200 text-gray-900 font-bold rounded-xl hover:border-orange-500 transition-all"
+                  className="px-8 py-4 bg-white border-2 border-gray-200 text-gray-900 font-bold rounded-xl hover:border-orange-500 transition-all duration-200"
                 >
                   Learn More
                 </motion.button>
@@ -167,7 +178,7 @@ export default function HomePage() {
                     key={idx}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 + idx * 0.1 }}
+                    transition={{ delay: 0.2 + idx * 0.1, duration: 0.3 }}
                   >
                     <div className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">{stat.value}</div>
                     <div className="text-sm text-gray-600 mt-1">{stat.label}</div>
@@ -180,7 +191,7 @@ export default function HomePage() {
             <motion.div
               initial={{ opacity: 0, x: 50 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8 }}
+              transition={{ duration: 0.5 }}
               className="relative h-[600px] hidden lg:block"
             >
               {foodImages.map((img, idx) => (
@@ -190,13 +201,13 @@ export default function HomePage() {
                   animate={{ 
                     opacity: 1, 
                     scale: 1,
-                    y: [0, -20, 0],
-                    rotate: idx % 2 === 0 ? [0, 3, 0] : [0, -3, 0]
+                    y: [0, -10, 0],
+                    rotate: idx % 2 === 0 ? [0, 2, 0] : [0, -2, 0]
                   }}
                   transition={{ 
-                    opacity: { delay: 0.2 + idx * 0.1 },
-                    y: { duration: 3 + idx, repeat: Infinity, ease: 'easeInOut' },
-                    rotate: { duration: 4 + idx, repeat: Infinity, ease: 'easeInOut' }
+                    opacity: { delay: 0.2 + idx * 0.1, duration: 0.3 },
+                    y: { duration: 2 + idx * 0.5, repeat: Infinity, ease: 'easeInOut' },
+                    rotate: { duration: 3 + idx * 0.5, repeat: Infinity, ease: 'easeInOut' }
                   }}
                   className="absolute rounded-2xl shadow-2xl overflow-hidden"
                   style={{
@@ -207,7 +218,16 @@ export default function HomePage() {
                     zIndex: idx === 0 ? 10 : idx
                   }}
                 >
-                  <Image src={img} alt="Food" fill className="object-cover" />
+                  <Image 
+                    src={img} 
+                    alt="Food" 
+                    fill 
+                    className="object-cover" 
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = '/placeholder-restaurant.jpg';
+                    }}
+                  />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                   <div className="absolute bottom-4 left-4 text-white">
                     <div className="flex items-center gap-1 mb-1">
@@ -232,8 +252,8 @@ export default function HomePage() {
                 key={idx}
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: idx * 0.1 }}
+                viewport={{ once: true, margin: "-100px" }}
+                transition={{ delay: idx * 0.1, duration: 0.3 }}
                 className={`p-6 rounded-2xl border-2 transition-all duration-300 ${
                   activeFeature === idx 
                     ? 'bg-gradient-to-br from-orange-500 to-red-500 border-transparent text-white shadow-2xl scale-105' 
@@ -264,6 +284,7 @@ export default function HomePage() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
+            transition={{ duration: 0.3 }}
             className="text-center mb-12"
           >
             <h2 className="text-4xl font-bold text-gray-900 mb-4">Choose Your Portal</h2>
@@ -276,13 +297,13 @@ export default function HomePage() {
                 key={idx}
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: idx * 0.1 }}
-                whileHover={{ y: -12, scale: 1.02 }}
-                onClick={() => router.push(portal.path)}
+                viewport={{ once: true, margin: "-100px" }}
+                transition={{ delay: idx * 0.1, duration: 0.3 }}
+                whileHover={{ y: -8, scale: 1.02 }}
+                onClick={() => handleNavigation(portal.path)}
                 className={`bg-white rounded-3xl shadow-xl overflow-hidden cursor-pointer group border-2 border-transparent hover:border-orange-200 transition-all duration-300 ${portal.shadow}`}
               >
-                <div className={`bg-gradient-to-br ${portal.gradient} p-10 transition-all duration-300 group-hover:scale-105`}>
+                <div className={`bg-gradient-to-br ${portal.gradient} p-10 transition-all duration-300`}>
                   <div className="text-white transform group-hover:scale-110 transition-transform duration-300">
                     {portal.icon}
                   </div>
@@ -294,7 +315,7 @@ export default function HomePage() {
                   <p className="text-gray-600 mb-6">
                     {portal.description}
                   </p>
-                  <div className="flex items-center text-orange-600 font-semibold group-hover:translate-x-2 transition-transform">
+                  <div className="flex items-center text-orange-600 font-semibold group-hover:translate-x-2 transition-transform duration-300">
                     Access Portal
                     <ArrowRight size={20} className="ml-2" />
                   </div>
@@ -312,10 +333,11 @@ export default function HomePage() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
+            transition={{ duration: 0.3 }}
           >
-            <h2 className="text-5xl font-bold mb-6">Ready to Order?</h2>
+            <h2 className="text-4xl lg:text-5xl font-bold mb-6">Ready to Order?</h2>
             <p className="text-xl mb-8 text-white/90">Join thousands of students enjoying delicious food every day</p>
-            <div className="flex gap-4 justify-center">
+            <div className="flex flex-wrap gap-4 justify-center">
               {['No Delivery Charges', 'Fast Pickup', 'RFID Payments'].map((item, idx) => (
                 <div key={idx} className="flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full">
                   <CheckCircle size={18} />
@@ -326,10 +348,11 @@ export default function HomePage() {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => router.push('/login')}
-              className="mt-8 px-10 py-4 bg-white text-orange-600 font-bold rounded-xl text-lg shadow-2xl hover:shadow-white/50 transition-all"
+              onClick={() => handleNavigation('/login')}
+              disabled={isLoading}
+              className="mt-8 px-10 py-4 bg-white text-orange-600 font-bold rounded-xl text-lg shadow-2xl hover:shadow-white/50 transition-all duration-200 disabled:opacity-50"
             >
-              Start Ordering Now
+              {isLoading ? 'Loading...' : 'Start Ordering Now'}
             </motion.button>
           </motion.div>
         </div>
