@@ -88,7 +88,12 @@ export async function POST(request: Request) {
         // This would be implemented if Firebase is available
         throw new Error('Firebase implementation not available')
       },
-      // Prisma write (SECONDARY)
+      // Supabase write (SECONDARY)
+      async () => {
+        // This would be implemented if Supabase is available
+        throw new Error('Supabase implementation not available')
+      },
+      // Prisma write (TERTIARY)
       async () => {
         return await prisma.user.create({
           data: userData
