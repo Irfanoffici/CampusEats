@@ -148,6 +148,118 @@ class APITunnel {
   static async submitReview(reviewData: any): Promise<APIResponse> {
     return this.post('/api/reviews', reviewData)
   }
+
+  /**
+   * Community and Messaging Functions
+   */
+
+  // Fetch user's friends
+  static async getFriends(): Promise<APIResponse> {
+    return this.get('/api/community/friends')
+  }
+
+  // Fetch friend requests
+  static async getFriendRequests(): Promise<APIResponse> {
+    return this.get('/api/community/friend-requests')
+  }
+
+  // Send friend request
+  static async sendFriendRequest(userId: string): Promise<APIResponse> {
+    return this.post('/api/community/friend-requests', { userId })
+  }
+
+  // Accept friend request
+  static async acceptFriendRequest(requestId: string): Promise<APIResponse> {
+    return this.put(`/api/community/friend-requests/${requestId}/accept`)
+  }
+
+  // Reject friend request
+  static async rejectFriendRequest(requestId: string): Promise<APIResponse> {
+    return this.put(`/api/community/friend-requests/${requestId}/reject`)
+  }
+
+  // Remove friend
+  static async removeFriend(userId: string): Promise<APIResponse> {
+    return this.delete(`/api/community/friends/${userId}`)
+  }
+
+  // Fetch conversations
+  static async getConversations(): Promise<APIResponse> {
+    return this.get('/api/messages/conversations')
+  }
+
+  // Fetch messages for a conversation
+  static async getMessages(conversationId: string): Promise<APIResponse> {
+    return this.get(`/api/messages/conversations/${conversationId}`)
+  }
+
+  // Send a message
+  static async sendMessage(conversationId: string, content: string): Promise<APIResponse> {
+    return this.post(`/api/messages/conversations/${conversationId}/messages`, { content })
+  }
+
+  // Create a new conversation
+  static async createConversation(participantIds: string[]): Promise<APIResponse> {
+    return this.post('/api/messages/conversations', { participantIds })
+  }
+
+  /**
+   * Group Order Functions
+   */
+
+  // Create a new group order
+  static async createGroupOrder(groupOrderData: any): Promise<APIResponse> {
+    return this.post('/api/group-orders', groupOrderData)
+  }
+
+  // Fetch user's group orders
+  static async getGroupOrders(): Promise<APIResponse> {
+    return this.get('/api/group-orders')
+  }
+
+  // Fetch a specific group order
+  static async getGroupOrder(id: string): Promise<APIResponse> {
+    return this.get(`/api/group-orders/${id}`)
+  }
+
+  // Update a group order
+  static async updateGroupOrder(id: string, data: any): Promise<APIResponse> {
+    return this.put(`/api/group-orders/${id}`, data)
+  }
+
+  // Delete a group order
+  static async deleteGroupOrder(id: string): Promise<APIResponse> {
+    return this.delete(`/api/group-orders/${id}`)
+  }
+
+  // Join a group order
+  static async joinGroupOrder(id: string): Promise<APIResponse> {
+    return this.post(`/api/group-orders/${id}/join`)
+  }
+
+  // Leave a group order
+  static async leaveGroupOrder(id: string): Promise<APIResponse> {
+    return this.post(`/api/group-orders/${id}/leave`)
+  }
+
+  // Finalize a group order
+  static async finalizeGroupOrder(id: string): Promise<APIResponse> {
+    return this.post(`/api/group-orders/${id}/finalize`)
+  }
+
+  /**
+   * User Profile Functions
+   */
+
+  // Get user profile
+  static async getUserProfile(): Promise<APIResponse> {
+    return this.get('/api/user/profile')
+  }
+
+  // Update user profile
+  static async updateUserProfile(profileData: any): Promise<APIResponse> {
+    return this.put('/api/user/profile', profileData)
+  }
 }
 
 export default APITunnel

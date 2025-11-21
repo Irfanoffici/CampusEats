@@ -1,413 +1,361 @@
 'use client'
 
-import { motion, useScroll, useTransform } from 'framer-motion'
-import { useRouter } from 'next/navigation'
-import { GraduationCap, Store, Shield, ArrowRight, Zap, Clock, Star, ChefHat, Sparkles, CheckCircle } from 'lucide-react'
 import { useState, useEffect } from 'react'
-import Image from 'next/image'
+import { motion } from 'framer-motion'
+import { Search, Filter, Star, Clock, Utensils, Users, MessageCircle, TrendingUp, Award, Gift } from 'lucide-react'
+import Link from 'next/link'
+import { useSession } from 'next-auth/react'
+import { formatCurrency } from '@/lib/utils'
 
 export default function HomePage() {
-  const router = useRouter()
-  const { scrollY } = useScroll()
-  const headerY = useTransform(scrollY, [0, 300], [0, -50])
-  const headerOpacity = useTransform(scrollY, [0, 200], [1, 0.8])
-  const [activeFeature, setActiveFeature] = useState(0)
-  const [isLoading, setIsLoading] = useState(false)
-
-  const portals = [
-    {
-      title: 'Student Portal',
-      description: 'Browse vendors, order food instantly, and track your orders in real-time',
-      icon: <GraduationCap size={40} />,
-      path: '/login?role=student',
-      gradient: 'from-blue-500 via-blue-600 to-indigo-600',
-      shadow: 'hover:shadow-blue-500/50'
-    },
-    {
-      title: 'Vendor Portal',
-      description: 'Manage your menu, track orders, and grow your business',
-      icon: <Store size={40} />,
-      path: '/login?role=vendor',
-      gradient: 'from-emerald-500 via-green-600 to-teal-600',
-      shadow: 'hover:shadow-emerald-500/50'
-    },
-    {
-      title: 'Admin Portal',
-      description: 'Complete system control, analytics, and user management',
-      icon: <Shield size={40} />,
-      path: '/login?role=admin',
-      gradient: 'from-purple-500 via-purple-600 to-pink-600',
-      shadow: 'hover:shadow-purple-500/50'
-    }
-  ]
-
-  const features = [
-    { icon: <Zap />, title: 'Lightning Fast', desc: 'Order in under 30 seconds' },
-    { icon: <Clock />, title: 'Real-time Tracking', desc: 'Know exactly when your food is ready' },
-    { icon: <Star />, title: 'Top Rated', desc: 'Only the best vendors on campus' },
-    { icon: <ChefHat />, title: 'Quality Food', desc: 'Fresh and delicious every time' }
-  ]
-
-  const foodImages = [
-    'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400',
-    'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400',
-    'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400',
-    'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400'
-  ]
+  const { data: session } = useSession()
+  const [vendors, setVendors] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [filter, setFilter] = useState('all')
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setActiveFeature((prev) => (prev + 1) % features.length)
-    }, 3000)
-    return () => clearInterval(interval)
+    fetchVendors()
   }, [])
 
-  const handleNavigation = (path: string) => {
-    setIsLoading(true)
-    router.push(path)
+  const fetchVendors = async () => {
+    try {
+      // In a real implementation, this would fetch vendors from the API
+      setVendors([
+        {
+          id: '1',
+          shopName: 'Campus Cafe',
+          description: 'Best coffee and snacks on campus',
+          rating: 4.7,
+          reviewCount: 124,
+          deliveryTime: '10-15 min',
+          imageUrl: 'https://via.placeholder.com/300',
+          categories: ['Coffee', 'Snacks'],
+          isFavorite: true
+        },
+        {
+          id: '2',
+          shopName: 'Burger Junction',
+          description: 'Gourmet burgers and fries',
+          rating: 4.5,
+          reviewCount: 98,
+          deliveryTime: '15-20 min',
+          imageUrl: 'https://via.placeholder.com/300',
+          categories: ['Burgers', 'Fast Food'],
+          isFavorite: false
+        },
+        {
+          id: '3',
+          shopName: 'Pizza Palace',
+          description: 'Freshly baked pizzas',
+          rating: 4.8,
+          reviewCount: 156,
+          deliveryTime: '20-25 min',
+          imageUrl: 'https://via.placeholder.com/300',
+          categories: ['Pizza', 'Italian'],
+          isFavorite: true
+        },
+        {
+          id: '4',
+          shopName: 'Sandwich Hub',
+          description: 'Fresh sandwiches and wraps',
+          rating: 4.3,
+          reviewCount: 76,
+          deliveryTime: '10-15 min',
+          imageUrl: 'https://via.placeholder.com/300',
+          categories: ['Sandwiches', 'Healthy'],
+          isFavorite: false
+        }
+      ])
+    } catch (error) {
+      console.error('Error fetching vendors:', error)
+    } finally {
+      setLoading(false)
+    }
   }
 
+  const filteredVendors = vendors.filter(vendor => {
+    const matchesSearch = vendor.shopName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         vendor.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         vendor.categories.some((cat: string) => cat.toLowerCase().includes(searchTerm.toLowerCase()))
+    const matchesFilter = filter === 'all' || 
+                         (filter === 'favorites' && vendor.isFavorite) ||
+                         vendor.categories.includes(filter)
+    return matchesSearch && matchesFilter
+  })
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 overflow-hidden">
-      {/* Sticky Header */}
-      <motion.nav 
-        style={{ y: headerY, opacity: headerOpacity }}
-        className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100 shadow-sm"
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <motion.div 
-              initial={{ x: -20, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              transition={{ duration: 0.3 }}
-              className="flex items-center gap-3"
-            >
-              <div className="w-11 h-11 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl flex items-center justify-center shadow-lg">
-                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">CampusEats</h1>
-                <p className="text-[10px] text-gray-500 -mt-0.5">Madras Engineering College</p>
-              </div>
-            </motion.div>
-            <motion.button
-              initial={{ x: 20, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              transition={{ duration: 0.3 }}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => handleNavigation('/login')}
-              disabled={isLoading}
-              className="px-6 py-2.5 bg-gradient-to-r from-orange-500 to-red-500 text-white font-semibold rounded-full shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50"
-            >
-              {isLoading ? 'Loading...' : 'Sign In'}
-            </motion.button>
-          </div>
-        </div>
-      </motion.nav>
-
+    <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <section className="relative pt-32 pb-20 px-4 sm:px-6 lg:px-8 overflow-hidden">
-        {/* Animated Background */}
-        <div className="absolute inset-0 -z-10">
-          <div className="absolute top-20 -left-20 w-96 h-96 bg-orange-100 rounded-full blur-3xl opacity-20 animate-pulse" />
-          <div className="absolute bottom-20 -right-20 w-96 h-96 bg-red-100 rounded-full blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '1s' }} />
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full h-full bg-gradient-to-br from-orange-50 to-red-50 opacity-20" />
-        </div>
-
-        <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            {/* Left Content */}
-            <motion.div
-              initial={{ opacity: 0, x: -50 }}
-              animate={{ opacity: 1, x: 0 }}
+      <div className="bg-gradient-to-br from-orange-500 to-red-500 text-white py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <motion.h1 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
+              className="text-4xl md:text-5xl font-bold mb-4"
             >
+              Order Food, Share Meals
+            </motion.h1>
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="text-xl md:text-2xl mb-8 text-orange-100"
+            >
+              CampusEats - Food delivery for Madras Engineering College
+            </motion.p>
+            
+            {session?.user ? (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-orange-50 border border-orange-200 text-orange-700 rounded-full mb-6 font-medium text-sm"
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="flex flex-col sm:flex-row gap-4 justify-center"
               >
-                <Sparkles size={16} className="text-orange-500" />
-                India's Fastest Campus Food Delivery
-              </motion.div>
-
-              <h1 className="text-5xl lg:text-6xl font-black text-gray-900 mb-6 leading-tight">
-                Order Food<br />
-                <span className="bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
-                  In Minutes
-                </span>
-              </h1>
-
-              <p className="text-xl text-gray-600 mb-8 leading-relaxed max-w-xl">
-                Delicious meals from your favorite campus vendors. Fast, fresh, and delivered with love.
-              </p>
-
-              <div className="flex flex-wrap gap-4">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => handleNavigation('/login')}
-                  disabled={isLoading}
-                  className="px-8 py-4 bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold rounded-xl shadow-xl flex items-center gap-2 text-lg transition-all duration-200 disabled:opacity-50"
+                <Link 
+                  href="/community" 
+                  className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-lg text-orange-600 bg-white hover:bg-gray-50 transition-colors"
                 >
-                  {isLoading ? 'Loading...' : 'Order Now'}
-                  <ArrowRight size={20} />
-                </motion.button>
-                
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => handleNavigation('/signup')}
-                  className="px-8 py-4 bg-white border-2 border-gray-200 text-gray-900 font-bold rounded-xl hover:border-orange-500 transition-all duration-200"
+                  <Users className="mr-2 h-5 w-5" />
+                  Join Community
+                </Link>
+                <Link 
+                  href="/group-orders" 
+                  className="inline-flex items-center justify-center px-6 py-3 border border-white text-base font-medium rounded-lg text-white bg-transparent hover:bg-orange-600 transition-colors"
+                >
+                  <Utensils className="mr-2 h-5 w-5" />
+                  Create Group Order
+                </Link>
+              </motion.div>
+            ) : (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="flex flex-col sm:flex-row gap-4 justify-center"
+              >
+                <Link 
+                  href="/login" 
+                  className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-lg text-orange-600 bg-white hover:bg-gray-50 transition-colors"
+                >
+                  Login
+                </Link>
+                <Link 
+                  href="/signup" 
+                  className="inline-flex items-center justify-center px-6 py-3 border border-white text-base font-medium rounded-lg text-white bg-transparent hover:bg-orange-600 transition-colors"
                 >
                   Sign Up
-                </motion.button>
-              </div>
-
-              {/* Stats */}
-              <div className="flex gap-8 mt-12">
-                {[
-                  { value: '5000+', label: 'Happy Students' },
-                  { value: '50+', label: 'Menu Items' },
-                  { value: '10+', label: 'Vendors' }
-                ].map((stat, idx) => (
-                  <motion.div
-                    key={idx}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 + idx * 0.1, duration: 0.3 }}
-                    className="text-center"
-                  >
-                    <div className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">{stat.value}</div>
-                    <div className="text-sm text-gray-600 mt-1">{stat.label}</div>
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
-
-            {/* Right Content - Floating Food Cards */}
-            <motion.div
-              initial={{ opacity: 0, x: 50 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5 }}
-              className="relative h-[600px] hidden lg:block"
-            >
-              {foodImages.map((img, idx) => (
-                <motion.div
-                  key={idx}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ 
-                    opacity: 1, 
-                    scale: 1,
-                    y: [0, -10, 0],
-                    rotate: idx % 2 === 0 ? [0, 2, 0] : [0, -2, 0]
-                  }}
-                  transition={{ 
-                    opacity: { delay: 0.2 + idx * 0.1, duration: 0.3 },
-                    y: { duration: 2 + idx * 0.5, repeat: Infinity, ease: 'easeInOut' },
-                    rotate: { duration: 3 + idx * 0.5, repeat: Infinity, ease: 'easeInOut' }
-                  }}
-                  className="absolute rounded-2xl shadow-2xl overflow-hidden border-4 border-white"
-                  style={{
-                    width: idx === 0 ? '300px' : '280px',
-                    height: idx === 0 ? '400px' : '350px',
-                    top: idx === 0 ? '10%' : idx === 1 ? '40%' : idx === 2 ? '5%' : '50%',
-                    left: idx === 0 ? '10%' : idx === 1 ? '50%' : idx === 2 ? '60%' : '5%',
-                    zIndex: idx === 0 ? 10 : idx
-                  }}
-                >
-                  <Image 
-                    src={img} 
-                    alt="Food" 
-                    fill 
-                    className="object-cover" 
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.src = '/placeholder-restaurant.jpg';
-                    }}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                  <div className="absolute bottom-4 left-4 text-white">
-                    <div className="flex items-center gap-1 mb-1">
-                      <Star size={14} className="fill-yellow-400 text-yellow-400" />
-                      <span className="text-sm font-semibold">4.8</span>
-                    </div>
-                    <p className="text-xs opacity-90">Starting from ₹40</p>
-                  </div>
-                </motion.div>
-              ))}
-            </motion.div>
+                </Link>
+              </motion.div>
+            )}
           </div>
         </div>
-      </section>
+      </div>
 
-      {/* Features Carousel */}
-      <section className="py-16 bg-gray-50">
+      {/* Features Section */}
+      <div className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">Why Choose CampusEats?</h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">Experience the fastest and most convenient food ordering service on campus</p>
+            <p className="text-xl text-gray-600">The best food ordering experience on campus</p>
           </div>
           
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {features.map((feature, idx) => (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-100px" }}
-                transition={{ delay: idx * 0.1, duration: 0.3 }}
-                whileHover={{ y: -8 }}
-                className={`p-6 rounded-2xl border transition-all duration-300 bg-white shadow-sm hover:shadow-md ${
-                  activeFeature === idx 
-                    ? 'border-orange-300 ring-2 ring-orange-100' 
-                    : 'border-gray-200'
-                }`}
-              >
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${
-                  activeFeature === idx ? 'bg-orange-100 text-orange-600' : 'bg-gray-100 text-gray-600'
-                }`}>
-                  {feature.icon}
-                </div>
-                <h3 className="text-lg font-bold mb-2">{feature.title}</h3>
-                <p className="text-gray-600 text-sm">
-                  {feature.desc}
-                </p>
-              </motion.div>
-            ))}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="text-center p-6 rounded-xl border border-gray-100 hover:shadow-lg transition-shadow"
+            >
+              <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Clock className="h-8 w-8 text-orange-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Fast Delivery</h3>
+              <p className="text-gray-600">Get your food delivered in 10-25 minutes, right to your campus location.</p>
+            </motion.div>
+            
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="text-center p-6 rounded-xl border border-gray-100 hover:shadow-lg transition-shadow"
+            >
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Users className="h-8 w-8 text-green-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Group Ordering</h3>
+              <p className="text-gray-600">Share meals with friends and split bills easily with our group ordering feature.</p>
+            </motion.div>
+            
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="text-center p-6 rounded-xl border border-gray-100 hover:shadow-lg transition-shadow"
+            >
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Award className="h-8 w-8 text-blue-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Quality Food</h3>
+              <p className="text-gray-600">Partnered with top campus vendors to ensure fresh and delicious meals.</p>
+            </motion.div>
           </div>
         </div>
-      </section>
+      </div>
 
-      {/* Portal Cards Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.3 }}
-            className="text-center mb-12"
-          >
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Choose Your Portal</h2>
-            <p className="text-xl text-gray-600">Select your role to get started</p>
-          </motion.div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {portals.map((portal, idx) => (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-100px" }}
-                transition={{ delay: idx * 0.1, duration: 0.3 }}
-                whileHover={{ y: -8, scale: 1.02 }}
-                onClick={() => handleNavigation(portal.path)}
-                className={`bg-white rounded-2xl shadow-lg overflow-hidden cursor-pointer group border transition-all duration-300 ${portal.shadow} hover:shadow-xl`}
-              >
-                <div className={`bg-gradient-to-br ${portal.gradient} p-8 transition-all duration-300`}>
-                  <div className="text-white transform group-hover:scale-110 transition-transform duration-300">
-                    {portal.icon}
-                  </div>
-                </div>
-                <div className="p-8">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-3 group-hover:text-orange-600 transition-colors">
-                    {portal.title}
-                  </h3>
-                  <p className="text-gray-600 mb-6">
-                    {portal.description}
-                  </p>
-                  <div className="flex items-center text-orange-600 font-semibold group-hover:translate-x-2 transition-transform duration-300">
-                    Access Portal
-                    <ArrowRight size={20} className="ml-2" />
-                  </div>
-                </div>
-              </motion.div>
-            ))}
+      {/* Vendors Section */}
+      <div className="py-16 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+            <div>
+              <h2 className="text-3xl font-bold text-gray-900">Popular Vendors</h2>
+              <p className="text-gray-600 mt-2">Discover the best food options on campus</p>
+            </div>
+            
+            <div className="flex flex-col sm:flex-row gap-4 mt-4 md:mt-0">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                <input
+                  type="text"
+                  placeholder="Search vendors..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                />
+              </div>
+              <div className="relative">
+                <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                <select
+                  value={filter}
+                  onChange={(e) => setFilter(e.target.value)}
+                  className="pl-10 pr-8 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none appearance-none bg-white"
+                >
+                  <option value="all">All Categories</option>
+                  <option value="favorites">Favorites</option>
+                  <option value="Coffee">Coffee</option>
+                  <option value="Burgers">Burgers</option>
+                  <option value="Pizza">Pizza</option>
+                  <option value="Sandwiches">Sandwiches</option>
+                </select>
+              </div>
+            </div>
           </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-br from-orange-500 to-red-500">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.3 }}
-          >
-            <h2 className="text-4xl lg:text-5xl font-bold mb-6">Ready to Order?</h2>
-            <p className="text-xl mb-8 text-white/90">Join thousands of students enjoying delicious food every day</p>
-            <div className="flex flex-wrap gap-4 justify-center mb-8">
-              {['No Delivery Charges', 'Fast Pickup', 'RFID Payments'].map((item, idx) => (
-                <div key={idx} className="flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full">
-                  <CheckCircle size={18} />
-                  <span className="font-medium">{item}</span>
-                </div>
+          
+          {loading ? (
+            <div className="flex justify-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredVendors.map((vendor) => (
+                <motion.div
+                  key={vendor.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow"
+                >
+                  <div className="relative">
+                    <img 
+                      src={vendor.imageUrl} 
+                      alt={vendor.shopName} 
+                      className="w-full h-48 object-cover"
+                    />
+                    <div className="absolute top-4 right-4">
+                      <button className={`p-2 rounded-full ${vendor.isFavorite ? 'bg-red-500 text-white' : 'bg-white text-gray-400'} shadow-md`}>
+                        <svg className="h-5 w-5" fill={vendor.isFavorite ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                  <div className="p-6">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="text-xl font-bold text-gray-900">{vendor.shopName}</h3>
+                        <p className="text-gray-600 mt-1">{vendor.description}</p>
+                      </div>
+                      <div className="flex items-center bg-orange-50 text-orange-700 px-2 py-1 rounded-full">
+                        <Star className="h-4 w-4 fill-current" />
+                        <span className="text-sm font-medium ml-1">{vendor.rating}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {vendor.categories.map((category: string, index: number) => (
+                        <span key={index} className="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full">
+                          {category}
+                        </span>
+                      ))}
+                    </div>
+                    
+                    <div className="mt-6 flex justify-between items-center">
+                      <div className="flex items-center text-gray-500">
+                        <Clock className="h-4 w-4 mr-1" />
+                        <span className="text-sm">{vendor.deliveryTime}</span>
+                      </div>
+                      <span className="text-sm text-gray-500">{vendor.reviewCount} reviews</span>
+                    </div>
+                    
+                    <div className="mt-6">
+                      <Link 
+                        href={`/vendors/${vendor.id}`}
+                        className="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-base font-medium rounded-lg text-white bg-gradient-to-r from-orange-500 to-red-500 hover:opacity-90 transition-opacity"
+                      >
+                        Order Now
+                      </Link>
+                    </div>
+                  </div>
+                </motion.div>
               ))}
             </div>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => handleNavigation('/signup')}
-              disabled={isLoading}
-              className="mt-4 px-10 py-4 bg-white text-orange-600 font-bold rounded-xl text-lg shadow-2xl hover:shadow-white/50 transition-all duration-200 disabled:opacity-50"
-            >
-              {isLoading ? 'Loading...' : 'Get Started Now'}
-            </motion.button>
-          </motion.div>
+          )}
         </div>
-      </section>
+      </div>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-4 gap-8 mb-8">
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg flex items-center justify-center">
-                  <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                  </svg>
-                </div>
-                <span className="text-xl font-bold">CampusEats</span>
-              </div>
-              <p className="text-gray-400 text-sm">Making campus dining smarter, faster, and more convenient.</p>
+      {/* CTA Section */}
+      <div className="py-16 bg-gradient-to-br from-orange-500 to-red-500 text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">Ready to Order?</h2>
+          <p className="text-xl mb-8 text-orange-100">Join thousands of students enjoying delicious meals on campus</p>
+          
+          {session?.user ? (
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link 
+                href="/community" 
+                className="inline-flex items-center justify-center px-6 py-3 border border-white text-base font-medium rounded-lg text-orange-600 bg-white hover:bg-gray-50 transition-colors"
+              >
+                <MessageCircle className="mr-2 h-5 w-5" />
+                Join Community
+              </Link>
+              <Link 
+                href="/group-orders" 
+                className="inline-flex items-center justify-center px-6 py-3 border border-white text-base font-medium rounded-lg text-white bg-transparent hover:bg-orange-600 transition-colors"
+              >
+                <Users className="mr-2 h-5 w-5" />
+                Create Group Order
+              </Link>
             </div>
-            <div>
-              <h4 className="font-semibold mb-4">Quick Links</h4>
-              <div className="space-y-2 text-sm text-gray-400">
-                <div className="hover:text-white cursor-pointer transition">About Us</div>
-                <div className="hover:text-white cursor-pointer transition">How It Works</div>
-                <div className="hover:text-white cursor-pointer transition">Vendors</div>
-              </div>
+          ) : (
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link 
+                href="/signup" 
+                className="inline-flex items-center justify-center px-6 py-3 border border-white text-base font-medium rounded-lg text-orange-600 bg-white hover:bg-gray-50 transition-colors"
+              >
+                Get Started
+              </Link>
+              <Link 
+                href="/login" 
+                className="inline-flex items-center justify-center px-6 py-3 border border-white text-base font-medium rounded-lg text-white bg-transparent hover:bg-orange-600 transition-colors"
+              >
+                Login
+              </Link>
             </div>
-            <div>
-              <h4 className="font-semibold mb-4">Support</h4>
-              <div className="space-y-2 text-sm text-gray-400">
-                <div className="hover:text-white cursor-pointer transition">Help Center</div>
-                <div className="hover:text-white cursor-pointer transition">Contact Us</div>
-                <div className="hover:text-white cursor-pointer transition">FAQs</div>
-              </div>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Legal</h4>
-              <div className="space-y-2 text-sm text-gray-400">
-                <div className="hover:text-white cursor-pointer transition">Privacy Policy</div>
-                <div className="hover:text-white cursor-pointer transition">Terms of Service</div>
-              </div>
-            </div>
-          </div>
-          <div className="border-t border-gray-800 pt-8 text-center text-gray-400 text-sm">
-            <p>© 2024 CampusEats MEC. All rights reserved. Made with ❤️ for students</p>
-          </div>
+          )}
         </div>
-      </footer>
+      </div>
     </div>
   )
 }

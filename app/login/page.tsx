@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { signIn } from 'next-auth/react'
+import { useState, useEffect } from 'react'
+import { signIn, useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
@@ -9,12 +9,27 @@ import { AlertCircle, CheckCircle, Eye, EyeOff } from 'lucide-react'
 
 export default function LoginPage() {
   const router = useRouter()
+  const { data: session, status } = useSession()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (status === 'authenticated') {
+      // Redirect based on user role
+      if (session?.user?.role === 'ADMIN') {
+        router.push('/dashboard/admin')
+      } else if (session?.user?.role === 'VENDOR') {
+        router.push('/dashboard/vendor')
+      } else {
+        router.push('/')
+      }
+    }
+  }, [status, session, router])
 
   const validateForm = () => {
     if (!email || !password) {
@@ -59,8 +74,7 @@ export default function LoginPage() {
       } else {
         setSuccess(true)
         toast.success('Login successful!')
-        router.push('/dashboard')
-        router.refresh()
+        // The redirect will be handled by the useEffect above
       }
     } catch (error) {
       setError('An unexpected error occurred. Please try again.')
@@ -68,6 +82,28 @@ export default function LoginPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  // Show loading state while checking session
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    )
+  }
+
+  // If already authenticated, show redirect message
+  if (status === 'authenticated') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <CheckCircle className="mx-auto h-12 w-12 text-green-500" />
+          <h3 className="mt-2 text-lg font-medium text-gray-900">Already logged in</h3>
+          <p className="mt-1 text-gray-500">Redirecting to your dashboard...</p>
+        </div>
+      </div>
+    )
   }
 
   return (

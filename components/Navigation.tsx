@@ -3,24 +3,29 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Utensils, Users, FileText, LogIn, UserPlus, X, Menu, MessageCircle, BarChart3, Settings, User, Users2, Shield } from 'lucide-react'
+import { Utensils, Users, FileText, LogIn, UserPlus, X, Menu, MessageCircle, BarChart3, Settings, User, Users2, Shield, LogOut, Wallet, ShoppingCart, UserCircle, Home } from 'lucide-react'
 import { useState, useEffect } from 'react'
+import { useSession, signOut } from 'next-auth/react'
+import { formatCurrency } from '@/lib/utils'
 
 export default function Navigation() {
   const pathname = usePathname()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const { data: session, status } = useSession()
   const [userRole, setUserRole] = useState<string | null>(null)
+  const [rfidBalance, setRfidBalance] = useState<number | null>(null)
   
   // Different navigation items based on user role
   const getNavItems = () => {
     if (userRole === 'STUDENT') {
       return [
+        { name: 'Home', href: '/', icon: Home },
         { name: 'Restaurants', href: '/', icon: Utensils },
         { name: 'Community', href: '/community', icon: Users2 },
+        { name: 'Messenger', href: '/messenger', icon: MessageCircle },
         { name: 'Group Orders', href: '/group-orders', icon: Users },
         { name: 'Invoices', href: '/invoices', icon: FileText },
-        { name: 'Messages', href: '/messages', icon: MessageCircle },
       ]
     } else if (userRole === 'VENDOR') {
       return [
@@ -41,6 +46,7 @@ export default function Navigation() {
       ]
     } else {
       return [
+        { name: 'Home', href: '/', icon: Home },
         { name: 'Restaurants', href: '/', icon: Utensils },
         { name: 'Group Orders', href: '/group-orders', icon: Users },
         { name: 'Invoices', href: '/invoices', icon: FileText },
@@ -65,10 +71,19 @@ export default function Navigation() {
     // Close mobile menu when route changes
     setIsMobileMenuOpen(false)
     
-    // Get user role from localStorage or session
-    const role = localStorage.getItem('userRole') || null
-    setUserRole(role)
-  }, [pathname])
+    // Get user role from session
+    if (session?.user) {
+      setUserRole(session.user.role)
+      setRfidBalance(session.user.rfidBalance || null)
+    } else {
+      setUserRole(null)
+      setRfidBalance(null)
+    }
+  }, [pathname, session])
+
+  const handleLogout = async () => {
+    await signOut({ callbackUrl: '/' })
+  }
 
   return (
     <>
@@ -104,6 +119,67 @@ export default function Navigation() {
                   )
                 })}
               </div>
+            </div>
+            
+            {/* User Info and Auth Buttons */}
+            <div className="hidden lg:flex items-center space-x-4">
+              {session?.user ? (
+                <>
+                  {/* RFID Balance */}
+                  {rfidBalance !== null && userRole === 'STUDENT' && (
+                    <div className="flex items-center px-3 py-2 bg-green-50 text-green-700 rounded-lg text-sm font-medium">
+                      <Wallet className="mr-2 h-4 w-4" />
+                      {formatCurrency(rfidBalance)}
+                    </div>
+                  )}
+                  
+                  {/* Cart Button */}
+                  <button className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
+                    <ShoppingCart className="h-5 w-5" />
+                  </button>
+                  
+                  {/* User Profile Dropdown */}
+                  <div className="relative">
+                    <Link 
+                      href="/profile"
+                      className="flex items-center space-x-2 focus:outline-none"
+                    >
+                      <div className="w-8 h-8 bg-gradient-to-br from-orange-400 to-red-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                        {session.user.name?.charAt(0) || 'U'}
+                      </div>
+                      <span className="text-sm font-medium text-gray-700 hidden md:block">
+                        {session.user.name || 'User'}
+                      </span>
+                    </Link>
+                  </div>
+                  
+                  {/* Logout Button */}
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Logout</span>
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <LogIn className="mr-2 h-4 w-4" />
+                    <span>Login</span>
+                  </Link>
+                  <Link
+                    href="/signup"
+                    className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-orange-500 to-red-500 rounded-lg hover:opacity-90 transition-opacity"
+                  >
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    <span>Sign Up</span>
+                  </Link>
+                </>
+              )}
             </div>
             
             {/* Mobile menu button */}
@@ -145,6 +221,72 @@ export default function Navigation() {
                 </Link>
               )
             })}
+            
+            {/* Mobile User Actions */}
+            {session?.user ? (
+              <div className="pt-4 pb-3 border-t border-gray-200">
+                <div className="flex items-center px-4">
+                  <div className="flex-shrink-0">
+                    <Link href="/profile">
+                      <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-red-500 rounded-full flex items-center justify-center text-white font-bold">
+                        {session.user.name?.charAt(0) || 'U'}
+                      </div>
+                    </Link>
+                  </div>
+                  <div className="ml-3">
+                    <div className="text-base font-medium text-gray-800">
+                      {session.user.name || 'User'}
+                    </div>
+                    <div className="text-sm font-medium text-gray-500">
+                      {session.user.email}
+                    </div>
+                  </div>
+                </div>
+                
+                {rfidBalance !== null && userRole === 'STUDENT' && (
+                  <div className="mt-3 px-4">
+                    <div className="flex items-center px-3 py-2 bg-green-50 text-green-700 rounded-lg text-sm font-medium">
+                      <Wallet className="mr-2 h-4 w-4" />
+                      RFID Balance: {formatCurrency(rfidBalance)}
+                    </div>
+                  </div>
+                )}
+                
+                <div className="mt-3 space-y-1 px-4">
+                  <Link
+                    href="/profile"
+                    className="flex items-center w-full px-4 py-2 text-base font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <UserCircle className="mr-3 h-5 w-5" />
+                    <span>Profile</span>
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center w-full px-4 py-2 text-base font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <LogOut className="mr-3 h-5 w-5" />
+                    <span>Logout</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="pt-4 pb-3 border-t border-gray-200 space-y-2 px-4">
+                <Link
+                  href="/login"
+                  className="flex items-center w-full px-4 py-2 text-base font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <LogIn className="mr-3 h-5 w-5" />
+                  <span>Login</span>
+                </Link>
+                <Link
+                  href="/signup"
+                  className="flex items-center w-full px-4 py-2 text-base font-medium text-white bg-gradient-to-r from-orange-500 to-red-500 rounded-lg hover:opacity-90 transition-opacity"
+                >
+                  <UserPlus className="mr-3 h-5 w-5" />
+                  <span>Sign Up</span>
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </nav>

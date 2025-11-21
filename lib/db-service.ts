@@ -1715,6 +1715,159 @@ export class DatabaseService {
       }
     )
   }
+
+  // Get user profile
+  static async getUserProfile(userId: string) {
+    return this.executeQuery(
+      // Firebase (PRIMARY)
+      async () => {
+        console.log(`[DB-Service] Firebase: Fetching user profile for ${userId}`)
+        if (!isFirebaseAvailable || !firestore) {
+          throw new Error('Firebase not available')
+        }
+        
+        const usersRef = collection(firestore!, 'users')
+        const q = query(usersRef, where('id', '==', userId))
+        const snapshot = await getDocs(q)
+        
+        if (snapshot.empty) {
+          throw new Error('User not found')
+        }
+        
+        const userData = snapshot.docs[0].data()
+        return {
+          id: snapshot.docs[0].id,
+          ...userData
+        }
+      },
+      // Prisma fallback (SECONDARY)
+      async () => {
+        console.log(`[DB-Service] Prisma: Fetching user profile for ${userId}`)
+        const user = await prisma.user.findUnique({
+          where: { id: userId },
+          include: { vendor: true }
+        })
+        
+        if (!user) {
+          throw new Error('User not found')
+        }
+        
+        return user
+      },
+      // NetlifyDB fallback (TERTIARY) - placeholder
+      async () => {
+        // Placeholder for NetlifyDB implementation
+        throw new Error('User not found')
+      }
+    )
+  }
+
+  // Update user profile
+  static async updateUserProfile(userId: string, profileData: any) {
+    return this.syncWrite(
+      'update',
+      // Firebase write (PRIMARY)
+      async () => {
+        if (!isFirebaseAvailable || !firestore) {
+          throw new Error('Firebase not available')
+        }
+        
+        // Check if username is already taken
+        if (profileData.username) {
+          const usersRef = collection(firestore!, 'users')
+          const usernameQuery = query(usersRef, where('username', '==', profileData.username))
+          const usernameSnapshot = await getDocs(usernameQuery)
+          
+          // If username exists and it's not the current user, throw error
+          for (const doc of usernameSnapshot.docs) {
+            if (doc.id !== userId) {
+              throw new Error('Username already taken')
+            }
+          }
+        }
+        
+        const userRef = doc(firestore!, 'users', userId)
+        await updateDoc(userRef, {
+          ...profileData,
+          updatedAt: new Date()
+        })
+        
+        return { id: userId, ...profileData }
+      },
+      // Prisma sync write (SECONDARY)
+      async () => {
+        // Check if username is already taken
+        if (profileData.username) {
+          const existingUsers = await prisma.user.findMany({
+            where: { username: profileData.username }
+          })
+          
+          for (const existingUser of existingUsers) {
+            if (existingUser.id !== userId) {
+              throw new Error('Username already taken')
+            }
+          }
+        }
+        
+        const updatedUser = await prisma.user.update({
+          where: { id: userId },
+          data: {
+            ...profileData,
+            updatedAt: new Date()
+          }
+        })
+        
+        return updatedUser
+      },
+      // NetlifyDB sync write (TERTIARY) - placeholder
+      async () => {
+        // Placeholder for NetlifyDB implementation
+        return { id: userId, ...profileData }
+      }
+    )
+  }
+
+  // Get user by username
+  static async getUserByUsername(username: string) {
+    return this.executeQuery(
+      // Firebase (PRIMARY)
+      async () => {
+        console.log(`[DB-Service] Firebase: Fetching user by username ${username}`)
+        if (!isFirebaseAvailable || !firestore) {
+          throw new Error('Firebase not available')
+        }
+        
+        const usersRef = collection(firestore!, 'users')
+        const q = query(usersRef, where('username', '==', username))
+        const snapshot = await getDocs(q)
+        
+        if (snapshot.empty) {
+          return null
+        }
+        
+        const userData = snapshot.docs[0].data()
+        return {
+          id: snapshot.docs[0].id,
+          ...userData
+        }
+      },
+      // Prisma fallback (SECONDARY)
+      async () => {
+        console.log(`[DB-Service] Prisma: Fetching user by username ${username}`)
+        const users = await prisma.user.findMany({
+          where: { username: username },
+          include: { vendor: true }
+        })
+        
+        return users.length > 0 ? users[0] : null
+      },
+      // NetlifyDB fallback (TERTIARY) - placeholder
+      async () => {
+        // Placeholder for NetlifyDB implementation
+        return null
+      }
+    )
+  }
 }
 
 export const dbService = new DatabaseService()
