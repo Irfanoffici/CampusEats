@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { BarChart, LineChart, PieChart, Bar, Line, Pie, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell, AreaChart, Area } from 'recharts'
+import { BarChart, LineChart, PieChart, Bar, Line, Pie, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell, AreaChart, Area, ValueType } from 'recharts'
 import { TrendingUp, ShoppingCart, DollarSign, Users, Star, Calendar, Filter, Building, CreditCard } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 
@@ -47,6 +47,15 @@ export default function AdminAnalytics() {
       { name: 'Burger Junction', revenue: 24500, orders: 690 },
     ]
   })
+
+  // Helper function to safely format currency values
+  const safeFormatCurrency = (value: ValueType): string => {
+    if (typeof value === 'number') {
+      return formatCurrency(value)
+    }
+    const num = Number(value)
+    return isNaN(num) ? String(value) : formatCurrency(num)
+  }
 
   return (
     <div className="space-y-6">
@@ -183,7 +192,7 @@ export default function AdminAnalytics() {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
                 <YAxis />
-                <Tooltip formatter={(value) => [formatCurrency(value), 'Revenue']} />
+                <Tooltip formatter={(value: ValueType) => [safeFormatCurrency(value), 'Revenue']} />
                 <Legend />
                 <Bar dataKey="value" fill="#0088FE" name="Revenue ($)" />
               </BarChart>
