@@ -445,6 +445,98 @@ export class DatabaseService {
       )
     }
   }
+  
+  // Get invoices (paid orders) for a user
+  static async getInvoices(userId: string) {
+    return this.executeQuery(
+      // Firebase (PRIMARY)
+      async () => {
+        console.log(`[DB-Service] Firebase: Fetching invoices for user ${userId}`)
+        if (!isFirebaseAvailable || !firestore) {
+          throw new Error('Firebase not available')
+        }
+        
+        const ordersRef = collection(firestore!, 'orders')
+        const q = query(
+          ordersRef,
+          where('studentId', '==', userId),
+          where('paymentStatus', '==', 'COMPLETED'),
+          orderBy('createdAt', 'desc')
+        )
+        const snapshot = await getDocs(q)
+        
+        const invoices = snapshot.docs.map(doc => {
+          const data = doc.data()
+          return {
+            id: doc.id,
+            orderNumber: data.orderNumber,
+            createdAt: data.createdAt,
+            totalAmount: data.totalAmount,
+            vendor: data.vendor || { shopName: 'Unknown Vendor' },
+            status: 'PAID',
+            items: data.items || []
+          }
+        })
+        
+        return invoices
+      },
+      // Supabase fallback (SECONDARY)
+      async () => {
+        console.log(`[DB-Service] Supabase: Fetching invoices for user ${userId}`)
+        const cookieStore = cookies()
+        const supabase = createServerComponentClient(cookieStore)
+        
+        const { data, error } = await supabase
+          .from('orders')
+          .select('*, vendor (*)')
+          .eq('studentId', userId)
+          .eq('paymentStatus', 'COMPLETED')
+          .order('createdAt', { ascending: false })
+        
+        if (error) throw error
+        
+        const invoices = (data || []).map(order => ({
+          id: order.id,
+          orderNumber: order.orderNumber,
+          createdAt: order.createdAt,
+          totalAmount: order.totalAmount,
+          vendor: order.vendor || { shopName: 'Unknown Vendor' },
+          status: 'PAID',
+          items: order.items || []
+        }))
+        
+        return invoices
+      },
+      // Prisma fallback (TERTIARY)
+      async () => {
+        console.log(`[DB-Service] Prisma: Fetching invoices for user ${userId}`)
+        const orders = await prisma.order.findMany({
+          where: {
+            studentId: userId,
+            paymentStatus: 'COMPLETED'
+          },
+          include: {
+            vendor: true
+          },
+          orderBy: {
+            createdAt: 'desc'
+          }
+        })
+        
+        const invoices = orders.map(order => ({
+          id: order.id,
+          orderNumber: order.orderNumber,
+          createdAt: order.createdAt,
+          totalAmount: order.totalAmount,
+          vendor: order.vendor || { shopName: 'Unknown Vendor' },
+          status: 'PAID',
+          items: order.items || []
+        }))
+        
+        return invoices
+      }
+    )
+  }
 
   // Create order (SYNCED across all DBs)
   static async createOrder(data: any) {
